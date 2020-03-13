@@ -1,41 +1,86 @@
 package com.github.hejcz
 
-import java.lang.RuntimeException
-import java.util.*
+enum class Terrain(private val str: () -> String) {
+    OUTSIDE_THE_MAP({ -> throw RuntimeException("cant print outside the map") }),
+    EMPTY({ -> "[ ]" }),
+    MOUNTAIN({ -> "[M]" }),
+    FOREST({ -> "[F]" }),
+    CITY({ -> "[C]" }),
+    RUINS({ -> "[R]" }),
+    WATER({ -> "[W]" });
 
-enum class Terrain {
-    EMPTY,
-    MOUNTAIN,
-    FOREST,
-    RUINS
-}
-
-interface Board {
-    fun draw(shape: Shape): Board
-    fun terrainAt(x: Int, y: Int): Terrain
-    fun iterate(fn: (x: Int, y: Int, terrain: Terrain) -> Unit)
-
-    companion object {
-        fun create(): Board = ArrayBoard(
-            arrayOf(
-                Array(11) { Terrain.EMPTY },
-                Array(11) { column -> if (column == 3) Terrain.MOUNTAIN else Terrain.EMPTY },
-                Array(11) { column -> if (column == 8) Terrain.MOUNTAIN else Terrain.EMPTY },
-                Array(11) { Terrain.EMPTY },
-                Array(11) { Terrain.EMPTY },
-                Array(11) { column -> if (column == 5) Terrain.MOUNTAIN else Terrain.EMPTY },
-                Array(11) { Terrain.EMPTY },
-                Array(11) { Terrain.EMPTY },
-                Array(11) { column -> if (column == 2) Terrain.MOUNTAIN else Terrain.EMPTY },
-                Array(11) { column -> if (column == 7) Terrain.MOUNTAIN else Terrain.EMPTY },
-                Array(11) { Terrain.EMPTY }
-            )
-        )
+    override fun toString(): String {
+        return str()
     }
 }
 
+interface Board {
+    fun draw(shape: Shape, terrain: Terrain): Board
+    fun terrainAt(x: Int, y: Int): Terrain
+    fun all(terrain: Terrain): Set<Pair<Int, Int>>
+
+    companion object {
+        fun create(): Board =
+            MapBoard(
+                mapOf(
+                    (-1 to 3) to Terrain.MOUNTAIN,
+                    (-2 to 8) to Terrain.MOUNTAIN,
+                    (-5 to 5) to Terrain.MOUNTAIN,
+                    (-8 to 2) to Terrain.MOUNTAIN,
+                    (-9 to 7) to Terrain.MOUNTAIN,
+                    (-1 to 5) to Terrain.RUINS,
+                    (-2 to 1) to Terrain.RUINS,
+                    (-2 to 9) to Terrain.RUINS,
+                    (-8 to 1) to Terrain.RUINS,
+                    (-8 to 9) to Terrain.RUINS,
+                    (-9 to 5) to Terrain.RUINS
+                ).withDefault { Terrain.EMPTY }
+            )
+
+        fun create2(): Board =
+            ArrayBoard(
+                arrayOf(
+                    Array(11) { Terrain.EMPTY },
+                    Array(11) { column -> if (column == 3) Terrain.MOUNTAIN else Terrain.EMPTY },
+                    Array(11) { column -> if (column == 8) Terrain.MOUNTAIN else Terrain.EMPTY },
+                    Array(11) { Terrain.EMPTY },
+                    Array(11) { Terrain.EMPTY },
+                    Array(11) { column -> if (column == 5) Terrain.MOUNTAIN else Terrain.EMPTY },
+                    Array(11) { Terrain.EMPTY },
+                    Array(11) { Terrain.EMPTY },
+                    Array(11) { column -> if (column == 2) Terrain.MOUNTAIN else Terrain.EMPTY },
+                    Array(11) { column -> if (column == 7) Terrain.MOUNTAIN else Terrain.EMPTY },
+                    Array(11) { Terrain.EMPTY }
+                )
+            )
+    }
+}
+
+// lets assume that map returns empty for unknown indices
+class MapBoard(private val board: Map<Pair<Int, Int>, Terrain>) : Board {
+    override fun draw(shape: Shape, terrain: Terrain): Board {
+        val newBoard = board.toMutableMap()
+        for ((x, y) in shape.toXYPoints()) {
+            newBoard[x to y] = terrain
+        }
+        return MapBoard(newBoard.toMap().withDefault { Terrain.EMPTY })
+    }
+
+    override fun terrainAt(x: Int, y: Int): Terrain = when {
+        x > 0 || x < -10 || y < 0 || y > 10 -> Terrain.OUTSIDE_THE_MAP
+        else -> board.getValue(x to y)
+    }
+
+    override fun all(terrain: Terrain): Set<Pair<Int, Int>> {
+        throw NotImplementedError()
+    }
+
+    override fun toString(): String =
+        (0 downTo -10).joinToString("\n") { x -> (0..10).joinToString("") { y -> this.terrainAt(x, y).toString() } }
+}
+
 class ArrayBoard(private val board: Array<Array<Terrain>>) : Board {
-    override fun draw(shape: Shape): Board {
+    override fun draw(shape: Shape, terrain: Terrain): Board {
         for ((x, y) in shape.toXYPoints()) {
             board[x + 7][y + 7] = Terrain.FOREST
         }
@@ -44,12 +89,8 @@ class ArrayBoard(private val board: Array<Array<Terrain>>) : Board {
 
     override fun terrainAt(x: Int, y: Int): Terrain = board[x][y]
 
-    override fun iterate(fn: (x: Int, y: Int, mountain: Terrain) -> Unit) {
-        board.forEachIndexed { rid, col ->
-            col.forEachIndexed { cid, terrain ->
-                fn(rid, cid, terrain)
-            }
-        }
+    override fun all(terrain: Terrain): Set<Pair<Int, Int>> {
+        throw NotImplementedError()
     }
 }
 
@@ -62,23 +103,38 @@ interface Shape {
 
     companion object {
         fun create(points: Set<Pair<Int, Int>>): Shape = PointGroupShape(points)
+
+        fun create(img: String): Shape =
+            create(
+                img.trimIndent()
+                    .lines()
+                    .asSequence()
+                    .filter { it.isNotBlank() }
+                    .map { it.trimEnd() }
+                    .mapIndexed { rowIdx, it ->
+                        it.mapIndexedNotNull { colIdx, c -> if (c == '[') (-rowIdx to colIdx/3) else null } }
+                    .flatten()
+                    .toSet()
+            )
     }
 }
 
-data class PointGroupShape(val points: Set<Pair<Int, Int>>) : Shape {
+data class PointGroupShape(
+    private val points: Set<Pair<Int, Int>>) : Shape {
+
     override fun createAllVariations(): Set<Shape> =
         setOf(
             this,
-            moveTopLeftToZeroZero(this.points.map { -it.first to it.second }),
-            moveTopLeftToZeroZero(this.points.map { -it.first to -it.second }),
-            moveTopLeftToZeroZero(this.points.map { it.first to -it.second }),
-            moveTopLeftToZeroZero(this.points.map { it.second to -it.first }),
-            moveTopLeftToZeroZero(this.points.map { -it.second to -it.first }),
-            moveTopLeftToZeroZero(this.points.map { -it.second to it.first }),
-            moveTopLeftToZeroZero(this.points.map { it.second to it.first })
+            moveTopLeftToZeroZero(points.map { -it.first to it.second }),
+            moveTopLeftToZeroZero(points.map { -it.first to -it.second }),
+            moveTopLeftToZeroZero(points.map { it.first to -it.second }),
+            moveTopLeftToZeroZero(points.map { it.second to -it.first }),
+            moveTopLeftToZeroZero(points.map { -it.second to -it.first }),
+            moveTopLeftToZeroZero(points.map { -it.second to it.first }),
+            moveTopLeftToZeroZero(points.map { it.second to it.first })
         )
 
-    override fun isOutOfBounds(): Boolean = points.any { (x, y) -> x < 0 || y > 10 }
+    override fun isOutOfBounds(): Boolean = points.any { (x, y) -> x > 0 || x < -10 || y < 0 || y > 10 }
 
     override fun isAnyPartOn(board: Board, terrain: Terrain): Boolean =
         points.any { (x, y) -> board.terrainAt(x, y) == Terrain.MOUNTAIN }
@@ -88,12 +144,14 @@ data class PointGroupShape(val points: Set<Pair<Int, Int>>) : Shape {
     override fun normalize(): Shape = moveTopLeftToZeroZero(points)
 
     companion object {
-            private fun moveTopLeftToZeroZero(positions: Collection<Pair<Int, Int>>): Shape {
-                val (leftX, topY) =
-                    positions.sortedWith(compareBy<Pair<Int, Int>> { it.first }.thenBy { it.second }).first()
-                return PointGroupShape(positions.map { it.first - leftX to it.second - topY }.toSet())
-            }
+        private fun moveTopLeftToZeroZero(positions: Collection<Pair<Int, Int>>): Shape {
+            val (leftX, topY) =
+                positions.sortedWith(compareBy<Pair<Int, Int>> { it.second }.thenByDescending { it.first }).first()
+            return PointGroupShape(positions.map { it.first - leftX to it.second - topY }.toSet())
         }
+
+        fun create(points: Set<Pair<Int, Int>>) = moveTopLeftToZeroZero(points)
+    }
 }
 
 data class RoundSummary(
@@ -105,8 +163,7 @@ data class RoundSummary(
     fun sum(): Int = quest1Points + quest2Points + coinsPoints - monstersPenalty
 }
 
-class Player {
-    val id: UUID = UUID.randomUUID()
+class Player(val id: String) {
     var board: Board = Board.create()
     var coins = 0
     var summaries = listOf<RoundSummary>()
@@ -135,17 +192,19 @@ fun Season.next(): Season {
 
 fun Board.countMonsterPoints(): Int = 0
 
-class Game {
+class GameImplementation(
+    private var deck: List<Card>,
+    private var monstersDeck: Set<Card>,
+    private var scoreCards: Map<Season, ScoreCard>,
+    private val shuffler: (List<Card>) -> List<Card>
+) : Game {
     var season: Season = Season.SPRING
-    var deck: List<Card> = listOf(Card14)
-    var monstersDeck: Set<Card> = setOf()
     var currentCardIndex: Int = 0
     var pointsInRound: Int = 0
     var players: List<Player> = emptyList()
     var playersDone: Int = 0
     var ruinsDrawn: Boolean = false
     var enemyDrawn: Boolean = false
-    var scoreCards: Map<Season, ScoreCard> = emptyMap()
 
     private fun cleanBeforeNextTurn() {
         val monsterCard = monstersDeck.random()
@@ -174,10 +233,13 @@ class Game {
         }
     }
 
-    fun update(id: UUID, shape: Shape): Response {
-        val player = players.find { it.id == id } ?: throw RuntimeException("No player with id $id")
+    fun update(id: String, shape: Shape, terrain: Terrain): Response {
+        val player = player(id) ?: throw RuntimeException("No player with id $id")
         val currentCard = deck[currentCardIndex]
         if (!currentCard.isValid(shape)) {
+            return Response(error = "invalid shape")
+        }
+        if (!currentCard.isValid(terrain)) {
             return Response(error = "invalid shape")
         }
         if (shape.isOutOfBounds()) {
@@ -189,7 +251,7 @@ class Game {
         if (ruinsDrawn && !shape.isAnyPartOn(player.board, Terrain.RUINS)) {
             return Response(error = "shape must be on ruins")
         }
-        player.board.draw(shape)
+        player.board = player.board.draw(shape, terrain)
         if (currentCard.givesCoin(shape)) {
             player.coins++
         }
@@ -229,26 +291,40 @@ class Game {
             )
         )
     }
+
+    override fun join(nick: String): GameImplementation {
+        players = players + Player(nick)
+        return this
+    }
+
+    override fun start(): GameImplementation {
+        return this
+    }
+
+    override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): GameImplementation {
+        val (error, events) = update(nick, Shape.create(points), terrain)
+        return this
+    }
+
+    private fun player(nick: String) = players.find { it.id == nick }
+
+    override fun boardOf(nick: String): Board = player(nick)?.board!!
+}
+
+interface Game {
+    fun join(nick: String): Game
+    fun start(): Game
+    fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game
+    fun boardOf(nick: String): Board
 }
 
 fun main() {
-    val b = Board.create()
-    printBoard(b)
-}
-
-fun printBoard(b: Board) {
-    b.iterate {x, y, terrain ->
-        if (y == 0 && x != 0) {
-            println()
-        }
-        print(
-            when (terrain) {
-                Terrain.MOUNTAIN -> "[M]"
-                Terrain.FOREST -> "[F]"
-                Terrain.EMPTY -> "[ ]"
-                Terrain.RUINS -> "[R]"
-            }
-        )
-    }
-    println()
+    val s = Shape.create(
+        """
+                  [ ]
+            [ ][ ][ ]
+            [ ][ ]
+            """
+    )
+    println(s)
 }

@@ -7,12 +7,7 @@ interface ScoreCard {
 // Leśna wieża
 class Card28 : ScoreCard {
     override fun evaluate(board: Board): Int {
-        var forests = listOf<Pair<Int, Int>>()
-        board.iterate { x, y, terrain ->
-            if (terrain == Terrain.FOREST) {
-                forests = forests + (x to y)
-            }
-        }
+        val forests = board.all(Terrain.FOREST)
         return forests.fold(0) { total, (x, y) ->
             when {
                 x > 0 && board.terrainAt(x - 1, y) == Terrain.EMPTY ||
