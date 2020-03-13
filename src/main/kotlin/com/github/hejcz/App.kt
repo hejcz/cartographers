@@ -9,7 +9,6 @@ enum class Terrain(private val str: () -> String) {
     MOUNTAIN({ -> "[M]" }),
     FOREST({ -> "[F]" }),
     CITY({ -> "[C]" }),
-    RUINS({ -> "[R]" }),
     PLAINS({ -> "[P]" }),
     WATER({ -> "[W]" }),
     MONSTER({ -> "[D]" });
@@ -27,6 +26,8 @@ interface Board {
     fun countFullRowsAndColumns(): Int
     fun countLeftToBottomDiameters(): Int
     fun connectedTerrains(terrain: Terrain): Set<Set<Pair<Int, Int>>>
+    fun adjacent(xy: Pair<Int, Int>): Set<Pair<Int, Int>>
+    fun hasRuinsOn(x: Int, y: Int): Boolean
 
     companion object {
         fun create(): Board =
@@ -36,13 +37,7 @@ interface Board {
                     Point(-2, 8) to Terrain.MOUNTAIN,
                     Point(-5, 5) to Terrain.MOUNTAIN,
                     Point(-8, 2) to Terrain.MOUNTAIN,
-                    Point(-9, 7) to Terrain.MOUNTAIN,
-                    Point(-1, 5) to Terrain.RUINS,
-                    Point(-2, 1) to Terrain.RUINS,
-                    Point(-2, 9) to Terrain.RUINS,
-                    Point(-8, 1) to Terrain.RUINS,
-                    Point(-8, 9) to Terrain.RUINS,
-                    Point(-9, 5) to Terrain.RUINS
+                    Point(-9, 7) to Terrain.MOUNTAIN
                 ).withDefault { Terrain.EMPTY }
             )
 
@@ -62,12 +57,12 @@ data class Point(val x: Int, val y: Int) {
             moveY(1).moveX(-1),
             moveY(-1),
             moveY(-1).moveX(1),
-            moveY(-1).moveX(-1))
+            moveY(-1).moveX(-1)
+        )
             .filter { it.x in minX..maxX && it.y in minY..maxY }
             .toSet()
 }
 
-// lets assume that map returns empty for unknown indices
 class MapBoard(private val board: Map<Point, Terrain>) : Board {
     override fun draw(shape: Shape, terrain: Terrain): Board {
         val newBoard = board.toMutableMap()
@@ -105,9 +100,34 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
         (0 downTo -10).count { x -> (0..(10 + x)).all { y -> terrainAt(x, y) != Terrain.EMPTY } }
 
     override fun connectedTerrains(terrain: Terrain): Set<Set<Pair<Int, Int>>> {
-        allPoints { it == terrain }
-        return emptySet()
+        val points = allPoints { it == terrain }
+        var groupId = 0
+        val pointToGroup = mutableMapOf(*(points.map { it to groupId++ }.toTypedArray()))
+        for (p in points) {
+            for (a in p.adjacent(-10, 0, 0, 10)) {
+                if (pointToGroup[a] != null) {
+                    pointToGroup[a] = pointToGroup.getValue(p)
+                }
+            }
+        }
+        return pointToGroup.entries.groupBy { it.value }
+            .mapValues { (_, v) -> v.map { it.key.x to it.key.y }.toSet() }
+            .values
+            .toSet()
     }
+
+    override fun adjacent(xy: Pair<Int, Int>) =
+        Point(xy.first, xy.second).adjacent(-10, 0, 0, 10)
+            .map { it.x to it.y }
+            .toSet()
+
+    override fun hasRuinsOn(x: Int, y: Int): Boolean =
+        x == -1 && y == 5
+                || x == -2 && y == 1
+                || x == -2 && y == 9
+                || x == -8 && y == 1
+                || x == -8 && y == 9
+                || x == -9 && y == 5
 
     private fun terrainAt(p: Point): Terrain = when {
         p.x > 0 || p.x < -10 || p.y < 0 || p.y > 10 -> Terrain.OUTSIDE_THE_MAP
@@ -137,7 +157,7 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
 interface Shape {
     fun createAllVariations(): Set<Shape>
     fun isOutOfBounds(): Boolean
-    fun isAnyPartOn(board: Board, terrain: Terrain): Boolean
+    fun anyMatches(predicate: (Pair<Int, Int>) -> Boolean): Boolean
     fun toXYPoints(): Set<Pair<Int, Int>>
     fun normalize(): Shape
     fun size(): Int
@@ -179,8 +199,8 @@ data class PointGroupShape(
 
     override fun isOutOfBounds(): Boolean = points.any { (x, y) -> x > 0 || x < -10 || y < 0 || y > 10 }
 
-    override fun isAnyPartOn(board: Board, terrain: Terrain): Boolean =
-        points.any { (x, y) -> board.terrainAt(x, y) == Terrain.MOUNTAIN }
+    override fun anyMatches(predicate: (Pair<Int, Int>) -> Boolean): Boolean =
+        points.any(predicate)
 
     override fun toXYPoints(): Set<Pair<Int, Int>> = points
 
@@ -235,7 +255,10 @@ fun Season.next(): Season {
     }
 }
 
-fun Board.countMonsterPoints(): Int = 0
+fun Board.countMonsterPoints(): Int = all { it == Terrain.MONSTER }
+    .flatMap { xy -> adjacent(xy) }
+    .toSet()
+    .count { terrainAt(it.first, it.second) == Terrain.EMPTY }
 
 class GameImplementation(
     private var deck: List<Card> = listOf(
@@ -259,7 +282,36 @@ class GameImplementation(
         CoboldsCharge03,
         GnollsInvasion04
     ),
-    private var scoreCards: Map<Season, ScoreCard>,
+    private var scoreCards: Map<Season, ScoreCard> =
+        listOf(Season.SPRING, Season.SUMMER, Season.AUTUMN, Season.WINTER)
+            .zip(
+                listOf(
+                    setOf(
+                        ForestTower28,
+                        ForestGuard26,
+                        Coppice27,
+                        MountainWoods29
+                    ).random(),
+                    setOf(
+                        HugeCity35,
+                        Fortress37,
+                        Colony34,
+                        FertilePlain36
+                    ).random(),
+                    setOf(
+                        FieldPuddle30,
+                        MagesValley30,
+                        VastEnbankment33,
+                        GoldenBreadbasket
+                    ).random(),
+                    setOf(
+                        Hideouts41,
+                        LostDemesne39,
+                        Borderlands38,
+                        TradingRoad40
+                    ).random()
+                ).shuffled()
+            ) { season, card -> season to card }.toMap(),
     private val shuffler: (List<Card>) -> List<Card> = { cards -> cards.shuffled() }
 ) : Game {
     var season: Season = Season.SPRING
@@ -269,6 +321,7 @@ class GameImplementation(
     var playersDone: Int = 0
     var ruinsDrawn: Boolean = false
     var enemyDrawn: Boolean = false
+
 
     private fun cleanBeforeNextTurn() {
         val monsterCard = monstersDeck.random()
@@ -309,10 +362,10 @@ class GameImplementation(
         if (shape.isOutOfBounds()) {
             return Response(error = "shape outside the map")
         }
-        if (shape.isAnyPartOn(player.board, Terrain.MOUNTAIN)) {
+        if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) == Terrain.MOUNTAIN }) {
             return Response(error = "shape on mountain")
         }
-        if (ruinsDrawn && !shape.isAnyPartOn(player.board, Terrain.RUINS)) {
+        if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }) {
             return Response(error = "shape must be on ruins")
         }
         player.board = player.board.draw(shape, terrain)
