@@ -4,7 +4,8 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
 class BasicStuffTest {
-    private val defaultMap = """[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+    private val defaultMap = """
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][R][ ][ ][ ][ ][ ]
 [ ][R][ ][ ][ ][ ][ ][ ][M][R][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
@@ -14,7 +15,8 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][R][M][ ][ ][ ][ ][ ][ ][R][ ]
 [ ][ ][ ][ ][ ][R][ ][M][ ][ ][ ]
-[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]"""
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+"""
 
     @Test
     fun `test default board`() {
@@ -29,7 +31,8 @@ class BasicStuffTest {
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.FOREST)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
-            """[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            """
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][R][ ][ ][ ][ ][ ]
 [ ][R][ ][ ][ ][ ][ ][ ][M][R][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
@@ -39,7 +42,8 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][ ][F][ ][ ][ ]
 [ ][R][M][ ][ ][ ][F][F][ ][R][ ]
 [ ][ ][ ][ ][ ][R][F][M][ ][ ][ ]
-[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]""",
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+""",
         "shape was added to board")
     }
 
@@ -51,7 +55,8 @@ class BasicStuffTest {
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.CITY)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
-            """[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            """
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][R][ ][ ][ ][ ][ ]
 [ ][R][ ][ ][ ][ ][ ][ ][M][R][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
@@ -61,7 +66,8 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][ ][C][ ][ ][ ]
 [ ][R][M][ ][ ][ ][C][C][ ][R][ ]
 [ ][ ][ ][ ][ ][R][C][M][ ][ ][ ]
-[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]""",
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+""",
             "shape was added to board")
     }
 

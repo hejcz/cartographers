@@ -7,7 +7,9 @@ enum class Terrain(private val str: () -> String) {
     FOREST({ -> "[F]" }),
     CITY({ -> "[C]" }),
     RUINS({ -> "[R]" }),
-    WATER({ -> "[W]" });
+    PLAINS({ -> "[P]" }),
+    WATER({ -> "[W]" }),
+    MONSTER({ -> "[D]" });
 
     override fun toString(): String {
         return str()
@@ -76,7 +78,7 @@ class MapBoard(private val board: Map<Pair<Int, Int>, Terrain>) : Board {
     }
 
     override fun toString(): String =
-        (0 downTo -10).joinToString("\n") { x -> (0..10).joinToString("") { y -> this.terrainAt(x, y).toString() } }
+        "\n" + (0 downTo -10).joinToString("\n") { x -> (0..10).joinToString("") { y -> this.terrainAt(x, y).toString() } } + "\n"
 }
 
 class ArrayBoard(private val board: Array<Array<Terrain>>) : Board {
@@ -100,6 +102,7 @@ interface Shape {
     fun isAnyPartOn(board: Board, terrain: Terrain): Boolean
     fun toXYPoints(): Set<Pair<Int, Int>>
     fun normalize(): Shape
+    fun size(): Int
 
     companion object {
         fun create(points: Set<Pair<Int, Int>>): Shape = PointGroupShape(points)
@@ -142,6 +145,8 @@ data class PointGroupShape(
     override fun toXYPoints(): Set<Pair<Int, Int>> = points
 
     override fun normalize(): Shape = moveTopLeftToZeroZero(points)
+
+    override fun size(): Int = points.size
 
     companion object {
         private fun moveTopLeftToZeroZero(positions: Collection<Pair<Int, Int>>): Shape {
@@ -193,10 +198,29 @@ fun Season.next(): Season {
 fun Board.countMonsterPoints(): Int = 0
 
 class GameImplementation(
-    private var deck: List<Card>,
-    private var monstersDeck: Set<Card>,
+    private var deck: List<Card> = listOf(
+        TreeFortress14,
+        BigRiver7,
+        ForgottenForest10,
+        Orchard13,
+        City9,
+        Ruins,
+        Ruins,
+        RuralStream11,
+        Cracks17,
+        Farm12,
+        Fends15,
+        Fields08,
+        FishermanVillage16
+    ),
+    private var monstersDeck: Set<Card> = setOf(
+        GoblinsAttack01,
+        BogeymanAssault02,
+        CoboldsCharge03,
+        GnollsInvasion04
+    ),
     private var scoreCards: Map<Season, ScoreCard>,
-    private val shuffler: (List<Card>) -> List<Card>
+    private val shuffler: (List<Card>) -> List<Card> = { cards -> cards.shuffled() }
 ) : Game {
     var season: Season = Season.SPRING
     var currentCardIndex: Int = 0
@@ -209,7 +233,7 @@ class GameImplementation(
     private fun cleanBeforeNextTurn() {
         val monsterCard = monstersDeck.random()
         monstersDeck = monstersDeck - monsterCard
-        deck = (deck + monsterCard).shuffled()
+        deck = shuffler(deck + monsterCard)
         currentCardIndex = 0
         pointsInRound = 0
         playersDone = 0
