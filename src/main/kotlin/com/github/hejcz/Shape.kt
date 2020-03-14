@@ -2,7 +2,6 @@ package com.github.hejcz
 
 interface Shape {
     fun createAllVariations(): Set<Shape>
-    fun isOutOfBounds(): Boolean
     fun anyMatches(predicate: (Pair<Int, Int>) -> Boolean): Boolean
     fun toXYPoints(): Set<Pair<Int, Int>>
     fun normalize(): Shape
@@ -43,8 +42,6 @@ data class PointGroupShape(
             moveTopLeftToZeroZero(points.map { -it.second to it.first }),
             moveTopLeftToZeroZero(points.map { it.second to it.first })
         )
-
-    override fun isOutOfBounds(): Boolean = points.any { (x, y) -> x > 0 || x < -10 || y < 0 || y > 10 }
 
     override fun anyMatches(predicate: (Pair<Int, Int>) -> Boolean): Boolean =
         points.any(predicate)

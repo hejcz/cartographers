@@ -79,7 +79,7 @@ class BasicStuffTest {
 
     @Test
     internal fun `apply shape to board`() {
-        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards } as Game)
+        val game = (GameImplementation(listOf(TreeFortress14, Ruins), emptySet(), emptyMap()) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.FOREST)
@@ -104,7 +104,7 @@ class BasicStuffTest {
 
     @Test
     internal fun `apply shape with different terrain to board`() {
-        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards } as Game)
+        val game = (GameImplementation(listOf(TreeFortress14, Ruins), emptySet(), emptyMap()) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.CITY)
@@ -189,6 +189,69 @@ class BasicStuffTest {
 """,
             game.draw("julian", setOf(-6 to 5, -7 to 6), Terrain.FOREST).boardOf("julian").toString(),
             "shape was not added to board"
+        )
+    }
+
+    @Test
+    internal fun `ruins flow`() {
+        val game = (GameImplementation(
+            listOf(Ruins, BigRiver07, ForgottenForest10, City09),
+            emptySet(),
+            emptyMap()
+        ) { cards -> cards } as Game)
+            .join("julian")
+            .start()
+        Assertions.assertNotEquals(
+            game.draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7), Terrain.WATER).boardOf("julian").toString(),
+            """
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][M][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][M][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][W][W][ ][ ]
+[ ][ ][M][ ][ ][ ][W][W][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][W][M][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+""",
+            "shape was not added on ruins even though ruins were forced"
+        )
+        val game1 = game.draw("julian", setOf(-9 to 5, -9 to 6, -8 to 6, -8 to 7, -7 to 7), Terrain.WATER)
+        Assertions.assertEquals(
+            """
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][M][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][M][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][W][ ][ ][ ]
+[ ][ ][M][ ][ ][ ][W][W][ ][ ][ ]
+[ ][ ][ ][ ][ ][W][W][M][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+""",
+            game1.boardOf("julian").toString(),
+            "shape was not added to board"
+        )
+        Assertions.assertEquals(
+            """
+[ ][F][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[F][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][M][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][M][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][W][ ][ ][ ]
+[ ][ ][M][ ][ ][ ][W][W][ ][ ][ ]
+[ ][ ][ ][ ][ ][W][W][M][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+""",
+            game1.draw("julian", setOf(-1 to 0, 0 to 1), Terrain.FOREST).boardOf("julian").toString(),
+            "next shape does not need to be on ruins"
         )
     }
 }

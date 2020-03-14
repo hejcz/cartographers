@@ -9,7 +9,7 @@ data class RoundSummary(
     fun sum(): Int = quest1Points + quest2Points + coinsPoints - monstersPenalty
 }
 
-class Player(val id: String) {
+class Player(val nick: String) {
     var board: Board = Board.create()
     var coins = 0
     var summaries = listOf<RoundSummary>()
@@ -96,8 +96,8 @@ class GameImplementation(
     private var players: List<Player> = emptyList()
     private var playersDone: Int = 0
     private var ruinsDrawn: Boolean = false
-    private var enemyDrawn: Boolean = false
-    private val recentEvents: Events = InMemoryEvents()
+    private var monsterDrawn: Boolean = false
+    lateinit var recentEvents: Events
 
     private fun cleanBeforeNextTurn() {
         val monsterCard = monstersDeck.random()
@@ -107,7 +107,7 @@ class GameImplementation(
         pointsInRound = 0
         playersDone = 0
         ruinsDrawn = false
-        enemyDrawn = false
+        monsterDrawn = false
         season = season.next()
         val quest1 = scoreCards.getValue(season)
         val quest2 = scoreCards.getValue(season.next())
@@ -123,10 +123,10 @@ class GameImplementation(
         currentCardIndex += 1
         playersDone = 0
         ruinsDrawn = false
-        enemyDrawn = false
+        monsterDrawn = false
     }
 
-    fun update(nick: String, shape: Shape, terrain: Terrain) {
+    private fun update(nick: String, shape: Shape, terrain: Terrain) {
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
         if (!currentCard.isValid(shape)) {
@@ -137,7 +137,7 @@ class GameImplementation(
             recentEvents.replace(nick, ErrorEvent("invalid terrain"))
             return
         }
-        if (shape.isOutOfBounds()) {
+        if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) == Terrain.OUTSIDE_THE_MAP }) {
             recentEvents.replace(nick, ErrorEvent("shape outside the map"))
             return
         }
@@ -161,13 +161,13 @@ class GameImplementation(
                     return
                 }
                 cleanBeforeNextTurn()
+                onNextCard()
                 recentEvents.replaceAll(
                     NewCardEvent(deck[currentCardIndex].number()),
-                    ScoresEvent(players.map { it.id to it.summaries.last().sum() }.toMap())
+                    ScoresEvent(players.map { it.nick to it.summaries.last().sum() }.toMap())
                 )
             } else {
                 cleanBeforeNextCard()
-                cleanBeforeNextTurn()
                 recentEvents.replaceAll(
                     NewCardEvent(deck[currentCardIndex].number())
                 )
@@ -175,32 +175,58 @@ class GameImplementation(
         }
     }
 
+    private fun onNextCard() {
+        while (deck[currentCardIndex] is Ruins) {
+            currentCardIndex++
+            ruinsDrawn = true
+        }
+        // TODO
+        // 1. monsters
+        // 2. coins for surrounding a mountain
+        // 3. test other score cards
+//        val currentCard = deck[currentCardIndex]
+//        if (currentCard is MonsterCard) {
+//            monsterDrawn = true
+//
+//            val shiftedPlayers = when (currentCard.direction()) {
+//                Direction.CLOCKWISE -> listOf(players.last()) + players.dropLast(1)
+//                Direction.COUNTERCLOCKWISE -> players.drop(1) + players.take(1)
+//            }
+//
+//            shiftedPlayers.zip(players) { drawingP, boardOwner ->
+//                recentEvents.replace(drawingP.nick, DrawMonsterEvent(boardOwner.board.toString()))
+//            }
+//        }
+    }
+
     private fun endGame() {
         val idToTotalScore =
-            players.map { it.id to it.summaries.sumBy(RoundSummary::sum) }.toMap()
-        val maxScore = idToTotalScore.values.max() ?: 0
+            players.map { it.nick to it.summaries.sumBy(RoundSummary::sum) }.toMap()
         recentEvents.replaceAll(ScoresEvent(idToTotalScore))
     }
 
-    override fun join(nick: String): GameImplementation {
+    override fun join(nick: String): Game {
         players = players + Player(nick)
         return this
     }
 
-    override fun start(): GameImplementation {
+    override fun start(): Game {
+        recentEvents = InMemoryEvents(players.map { it.nick })
+        recentEvents.replaceAll(NewCardEvent(deck[currentCardIndex].number()))
+        onNextCard()
         return this
     }
 
-    override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): GameImplementation {
+    override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game {
         update(nick, Shape.create(points), terrain)
         return this
     }
 
-    private fun player(nick: String) = players.find { it.id == nick }
+    private fun player(nick: String) = players.find { it.nick == nick }
 
     override fun boardOf(nick: String): Board = player(nick)?.board!!
 
-    override fun recentEvents(nick: String): List<Event> = recentEvents.of(nick)
+    override fun recentEvents(nick: String): Set<Event> = recentEvents.of(nick)
 }
 
 interface Game {
@@ -208,14 +234,5 @@ interface Game {
     fun start(): Game
     fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game
     fun boardOf(nick: String): Board
-    fun recentEvents(nick: String): List<Event>
-}
-
-fun main() {
-    println((1..11).takeWhile { -8 - it >= -11 && 2 + it <= 11 })
-}
-
-fun terrainAt(x: Int, y: Int): Any {
-    println("Called with $x $y")
-    return Terrain.MONSTER
+    fun recentEvents(nick: String): Set<Event>
 }
