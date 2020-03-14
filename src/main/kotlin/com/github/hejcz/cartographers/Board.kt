@@ -19,26 +19,11 @@ interface Board {
         fun create(): Board =
             MapBoard(
                 mapOf(
-                    Point(
-                        -1,
-                        3
-                    ) to Terrain.MOUNTAIN,
-                    Point(
-                        -2,
-                        8
-                    ) to Terrain.MOUNTAIN,
-                    Point(
-                        -5,
-                        5
-                    ) to Terrain.MOUNTAIN,
-                    Point(
-                        -8,
-                        2
-                    ) to Terrain.MOUNTAIN,
-                    Point(
-                        -9,
-                        7
-                    ) to Terrain.MOUNTAIN
+                    Point(-1, 3) to Terrain.MOUNTAIN,
+                    Point(-2, 8) to Terrain.MOUNTAIN,
+                    Point(-5, 5) to Terrain.MOUNTAIN,
+                    Point(-8, 2) to Terrain.MOUNTAIN,
+                    Point(-9, 7) to Terrain.MOUNTAIN
                 ).withDefault { Terrain.EMPTY }
             )
 

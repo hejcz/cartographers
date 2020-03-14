@@ -1,0 +1,18 @@
+body {
+    font-family: Ubuntu;
+    font-size: 22px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 20px;
+}
+
+#game {
+    width: 600px;
+    height: 1000px;
+    margin-top: 20px;
+}
+
+#submit, #start, #leave {
+    margin-top: 20px;
+}

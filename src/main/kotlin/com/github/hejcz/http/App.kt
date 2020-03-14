@@ -11,6 +11,8 @@ import com.github.hejcz.cartographers.Terrain
 import io.ktor.application.install
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.http.cio.websocket.readText
+import io.ktor.http.content.*
+import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -59,6 +61,11 @@ fun main() {
     embeddedServer(Netty, 8080) {
         install(WebSockets)
         routing {
+            static("game") {
+                resources("css")
+                resources("js")
+                resource("index.html")
+            }
             webSocket("/api") {
                 for (frame in incoming) {
                     try {
