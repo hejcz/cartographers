@@ -9,10 +9,10 @@ object ForestTower28 : ScoreCard {
         val forests = board.all { it == Terrain.FOREST }
         return forests.fold(0) { total, (x, y) ->
             when {
-                x > 0 && board.terrainAt(x - 1, y) == Terrain.EMPTY ||
-                        x < 10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
-                        y < 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
-                        y > -10 && board.terrainAt(x, y + 1) == Terrain.EMPTY -> {
+                x < 0 && board.terrainAt(x - 1, y) == Terrain.EMPTY ||
+                    x > -10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
+                    y > 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
+                    y < 10 && board.terrainAt(x, y + 1) == Terrain.EMPTY  -> {
                     total
                 }
                 else -> total + 1
@@ -59,9 +59,9 @@ object MountainWoods29 : ScoreCard {
 
 object HugeCity35 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        board.connectedTerrains(Terrain.CITY).firstOrNull() { city ->
-            city.flatMap { board.adjacent(it) }.all { (x, y) -> board.terrainAt(x, y) != Terrain.MOUNTAIN }
-        }?.size ?: 0
+        board.connectedTerrains(Terrain.CITY).filter { city ->
+            city.flatMap { board.adjacent(it) }.toSet().all { (x, y) -> board.terrainAt(x, y) != Terrain.MOUNTAIN }
+        }.maxBy { it.size }?.size ?: 0
 }
 
 object Fortress37 : ScoreCard {
@@ -123,12 +123,10 @@ object VastEnbankment33 : ScoreCard {
 
 object GoldenBreadbasket : ScoreCard {
     override fun evaluate(board: Board): Int =
-        board.all { it == Terrain.PLAINS }
+        3 * board.all { it == Terrain.PLAINS }
             .count { (x, y) -> board.hasRuinsOn(x, y) } +
         board.all { it == Terrain.WATER }
-            .flatMap { board.adjacent(it) }
-            .toSet()
-            .count { (x, y) -> board.hasRuinsOn(x, y) }
+            .count { board.adjacent(it).any { (x, y) -> board.hasRuinsOn(x, y) } }
 }
 
 object Hideouts41 : ScoreCard {
