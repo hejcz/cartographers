@@ -133,13 +133,13 @@ object GoldenBreadbasket : ScoreCard {
 
 object Hideouts41 : ScoreCard {
     override fun evaluate(board: Board): Int {
-        val forests = board.all { it == Terrain.EMPTY }
-        return forests.fold(0) { total, (x, y) ->
+        val emptyTerrains = board.allEmpty()
+        return emptyTerrains.fold(0) { total, (x, y) ->
             when {
-                x > 0 && board.terrainAt(x - 1, y) == Terrain.EMPTY ||
-                        x < 10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
-                        y < 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
-                        y > -10 && board.terrainAt(x, y + 1) == Terrain.EMPTY -> {
+                x < 0 && board.terrainAt(x - 1, y) == Terrain.EMPTY ||
+                    x > -10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
+                    y > 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
+                    y < 10 && board.terrainAt(x, y + 1) == Terrain.EMPTY  -> {
                     total
                 }
                 else -> total + 1

@@ -1,5 +1,6 @@
 package com.github.hejcz
 
+import java.util.regex.Pattern
 import java.util.stream.IntStream
 import kotlin.math.max
 
@@ -16,12 +17,25 @@ enum class Terrain(private val str: () -> String) {
     override fun toString(): String {
         return str()
     }
+
+    companion object {
+        fun from(str: String) = when(str) {
+            "[D]" -> MONSTER
+            "[F]" -> FOREST
+            "[C]" -> CITY
+            "[P]" -> PLAINS
+            "[W]" -> WATER
+            "[M]" -> MOUNTAIN
+            else -> throw RuntimeException("should not create terrain from $str")
+        }
+    }
 }
 
 interface Board {
     fun draw(shape: Shape, terrain: Terrain): Board
     fun terrainAt(x: Int, y: Int): Terrain
     fun all(predicate: (Terrain) -> Boolean): Set<Pair<Int, Int>>
+    fun allEmpty(): Set<Pair<Int, Int>>
     fun biggestSquareLength(): Int
     fun countFullRowsAndColumns(): Int
     fun countLeftToBottomDiameters(): Int
@@ -41,6 +55,19 @@ interface Board {
                 ).withDefault { Terrain.EMPTY }
             )
 
+        fun create(img: String): Board {
+            val regex = "\\[[^ ]\\]".toRegex()
+            return MapBoard(
+                img.trimIndent().lines()
+                    .filter { it.isNotBlank() }
+                    .mapIndexed { lineNumber, line ->
+                        regex.findAll(line).map { Point(-lineNumber, it.range.first / 3) to Terrain.from(it.value) }.toSet()
+                    }
+                    .flatten()
+                    .toMap()
+                    .withDefault { Terrain.EMPTY }
+            )
+        }
     }
 }
 
@@ -77,6 +104,10 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
     override fun all(predicate: (Terrain) -> Boolean): Set<Pair<Int, Int>> =
         board.filterValues(predicate).keys.map { it.x to it.y }.toSet()
 
+    override fun allEmpty(): Set<Pair<Int, Int>> = (0 downTo -10).flatMap { x -> (0..10).map { x to it } }
+        .filter { !board.containsKey(Point(it.first, it.second)) }
+        .toSet()
+
     private fun allPoints(predicate: (Terrain) -> Boolean): Set<Point> =
         board.filterValues(predicate).keys
 
@@ -84,7 +115,7 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
         var globalBest = 0
         for (x in 0 downTo -10) {
             for (y in 0..10) {
-                val localBest = (1..11).takeWhile { x - it <= -10 && y + it <= 10 > isSquareOfSize(x, y, it) }
+                val localBest = (1..11).takeWhile { x - it >= -11 && y + it <= 11 && isSquareOfSize(x, y, it) }
                     .lastOrNull() ?: 0
                 globalBest = max(globalBest, localBest)
             }
@@ -92,12 +123,25 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
         return globalBest
     }
 
+    // assuming that there is square staring at x,y of size: size - 1
+    private fun isSquareOfSize(x: Int, y: Int, size: Int): Boolean = when (size) {
+        1 -> terrainAt(x, y) !in setOf(Terrain.EMPTY, Terrain.OUTSIDE_THE_MAP)
+        else -> {
+            val offset = size - 1
+            val row = x - offset
+            val col = y + offset
+            IntStream.range(0, size)
+                .allMatch { terrainAt(row, y + it) !in setOf(Terrain.EMPTY, Terrain.OUTSIDE_THE_MAP)
+                        && terrainAt(x - it, col) !in setOf(Terrain.EMPTY, Terrain.OUTSIDE_THE_MAP) }
+        }
+    }
+
     override fun countFullRowsAndColumns(): Int =
-        board.entries.groupBy { it.key.x }.count { it.value.all { e -> e.value != Terrain.EMPTY } } +
-                board.entries.groupBy { it.key.y }.count { it.value.all { e -> e.value != Terrain.EMPTY } }
+        board.entries.groupBy { it.key.x }.count { it.value.size == 11 } +
+                board.entries.groupBy { it.key.y }.count { it.value.size == 11 }
 
     override fun countLeftToBottomDiameters(): Int =
-        (0 downTo -10).count { x -> (0..(10 + x)).all { y -> terrainAt(x, y) != Terrain.EMPTY } }
+        (0 downTo -10).count { x -> (0..(10 + x)).all { y -> terrainAt(x - y, y) != Terrain.EMPTY } }
 
     override fun connectedTerrains(terrain: Terrain): Set<Set<Pair<Int, Int>>> {
         val points = allPoints { it == terrain }
@@ -132,18 +176,6 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
     private fun terrainAt(p: Point): Terrain = when {
         p.x > 0 || p.x < -10 || p.y < 0 || p.y > 10 -> Terrain.OUTSIDE_THE_MAP
         else -> board.getValue(p)
-    }
-
-    // assuming that there is square staring at x,y of size: size - 1
-    private fun isSquareOfSize(x: Int, y: Int, size: Int): Boolean = when (size) {
-        1 -> terrainAt(x, y) != Terrain.EMPTY
-        else -> {
-            val offset = size - 1
-            val row = x - offset
-            val col = y + offset
-            IntStream.range(0, size)
-                .allMatch { terrainAt(row, col + it) != Terrain.EMPTY && terrainAt(row - it, col) != Terrain.EMPTY }
-        }
     }
 
     override fun toString(): String =
@@ -436,7 +468,7 @@ interface Game {
 }
 
 fun main() {
-    (0 downTo -10).count { x -> (0..(10 + x)).all { y -> terrainAt(x, y) != Terrain.EMPTY } }
+    println((1..11).takeWhile { -8 - it >= -11 && 2 + it <= 11 })
 }
 
 fun terrainAt(x: Int, y: Int): Any {
