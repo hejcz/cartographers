@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 interface Card {
     fun availableShapes(): Set<Shape>
@@ -25,7 +25,8 @@ object TreeFortress14 : Card {
             """
         ).createAllVariations()
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain == Terrain.CITY || terrain == Terrain.FOREST
 
@@ -53,7 +54,8 @@ object BigRiver07 : Card {
             """
                 ).createAllVariations()
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain == Terrain.WATER
 
@@ -80,7 +82,8 @@ object ForgottenForest10 : Card {
             """
                 ).createAllVariations()
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain == Terrain.FOREST
 
@@ -100,7 +103,8 @@ object Orchard13 : Card {
             """
         ).createAllVariations()
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain == Terrain.FOREST || terrain == Terrain.PLAINS
 
@@ -126,7 +130,8 @@ object City09 : Card {
             """
                 ).createAllVariations()
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain == Terrain.CITY
 
@@ -160,7 +165,8 @@ object RuralStream11 : Card {
             """
         ).createAllVariations()
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain == Terrain.WATER || terrain == Terrain.PLAINS
 
@@ -179,9 +185,16 @@ object Cracks17 : Card {
             """
         ).createAllVariations()
 
-    private val matchingTerrains = setOf(Terrain.PLAINS, Terrain.WATER, Terrain.CITY, Terrain.FOREST, Terrain.MONSTER)
+    private val matchingTerrains = setOf(
+        Terrain.PLAINS,
+        Terrain.WATER,
+        Terrain.CITY,
+        Terrain.FOREST,
+        Terrain.MONSTER
+    )
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain in matchingTerrains
 
@@ -202,9 +215,13 @@ object Farm12 : Card {
             """
         ).createAllVariations()
 
-    private val matchingTerrains = setOf(Terrain.PLAINS, Terrain.CITY)
+    private val matchingTerrains = setOf(
+        Terrain.PLAINS,
+        Terrain.CITY
+    )
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain in matchingTerrains
 
@@ -225,9 +242,13 @@ object Fends15 : Card {
             """
         ).createAllVariations()
 
-    private val matchingTerrains = setOf(Terrain.FOREST, Terrain.WATER)
+    private val matchingTerrains = setOf(
+        Terrain.FOREST,
+        Terrain.WATER
+    )
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain in matchingTerrains
 
@@ -254,7 +275,8 @@ object Fields08 : Card {
             """
                 ).createAllVariations()
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain == Terrain.PLAINS
 
@@ -273,9 +295,13 @@ object FishermanVillage16 : Card {
             """
         ).createAllVariations()
 
-    private val matchingTerrains = setOf(Terrain.CITY, Terrain.WATER)
+    private val matchingTerrains = setOf(
+        Terrain.CITY,
+        Terrain.WATER
+    )
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun isValid(terrain: Terrain): Boolean = terrain in matchingTerrains
 

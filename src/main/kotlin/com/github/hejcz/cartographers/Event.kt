@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 interface Events {
     fun replaceAll(vararg events: Event)

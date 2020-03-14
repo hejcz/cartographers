@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 interface Shape {
     fun createAllVariations(): Set<Shape>
@@ -48,7 +48,8 @@ data class PointGroupShape(
 
     override fun toXYPoints(): Set<Pair<Int, Int>> = points
 
-    override fun normalize(): Shape = moveTopLeftToZeroZero(points)
+    override fun normalize(): Shape =
+        moveTopLeftToZeroZero(points)
 
     override fun size(): Int = points.size
 
@@ -59,6 +60,7 @@ data class PointGroupShape(
             return PointGroupShape(positions.map { it.first - leftX to it.second - topY }.toSet())
         }
 
-        fun create(points: Set<Pair<Int, Int>>) = moveTopLeftToZeroZero(points)
+        fun create(points: Set<Pair<Int, Int>>) =
+            moveTopLeftToZeroZero(points)
     }
 }

@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 enum class Terrain(private val str: () -> String) {
     OUTSIDE_THE_MAP({ -> throw RuntimeException("cant print outside the map") }),

@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 data class RoundSummary(
     val quest1Points: Int,
@@ -10,7 +10,8 @@ data class RoundSummary(
 }
 
 class Player(val nick: String) {
-    var board: Board = Board.create()
+    var board: Board =
+        Board.create()
     var coins = 0
     var summaries = listOf<RoundSummary>()
 }
@@ -59,7 +60,12 @@ class GameImplementation(
         GnollsInvasion04
     ),
     private var scoreCards: Map<Season, ScoreCard> =
-        listOf(Season.SPRING, Season.SUMMER, Season.AUTUMN, Season.WINTER)
+        listOf(
+            Season.SPRING,
+            Season.SUMMER,
+            Season.AUTUMN,
+            Season.WINTER
+        )
             .zip(
                 listOf(
                     setOf(
@@ -90,7 +96,8 @@ class GameImplementation(
             ) { season, card -> season to card }.toMap(),
     private val shuffler: (List<Card>) -> List<Card> = { cards -> cards.shuffled() }
 ) : Game {
-    private var season: Season = Season.SPRING
+    private var season: Season =
+        Season.SPRING
     private var currentCardIndex: Int = 0
     private var pointsInRound: Int = 0
     private var players: List<Player> = emptyList()
@@ -138,15 +145,21 @@ class GameImplementation(
             return
         }
         if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) == Terrain.OUTSIDE_THE_MAP }) {
-            recentEvents.replace(nick, ErrorEvent("shape outside the map"))
+            recentEvents.replace(nick,
+                ErrorEvent("shape outside the map")
+            )
             return
         }
         if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) != Terrain.EMPTY }) {
-            recentEvents.replace(nick, ErrorEvent("shape on taken point"))
+            recentEvents.replace(nick,
+                ErrorEvent("shape on taken point")
+            )
             return
         }
         if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }) {
-            recentEvents.replace(nick, ErrorEvent("shape must be on ruins"))
+            recentEvents.replace(nick,
+                ErrorEvent("shape must be on ruins")
+            )
             return
         }
         player.board = player.board.draw(shape, terrain)

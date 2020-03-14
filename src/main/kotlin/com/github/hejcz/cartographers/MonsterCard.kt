@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 enum class Direction {
     CLOCKWISE, COUNTERCLOCKWISE
@@ -22,9 +22,11 @@ object GoblinsAttack01 : MonsterCard {
             """
         ).createAllVariations()
 
-    override fun direction(): Direction = Direction.COUNTERCLOCKWISE
+    override fun direction(): Direction =
+        Direction.COUNTERCLOCKWISE
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun number(): String = "01"
 }
@@ -38,9 +40,11 @@ object BogeymanAssault02 : MonsterCard {
             """
         ).createAllVariations()
 
-    override fun direction(): Direction = Direction.CLOCKWISE
+    override fun direction(): Direction =
+        Direction.CLOCKWISE
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun number(): String = "02"
 }
@@ -55,9 +59,11 @@ object GnollsInvasion04 : MonsterCard {
             """
         ).createAllVariations()
 
-    override fun direction(): Direction = Direction.COUNTERCLOCKWISE
+    override fun direction(): Direction =
+        Direction.COUNTERCLOCKWISE
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun number(): String = "04"
 }
@@ -72,9 +78,11 @@ object CoboldsCharge03 : MonsterCard {
             """
         ).createAllVariations()
 
-    override fun direction(): Direction = Direction.CLOCKWISE
+    override fun direction(): Direction =
+        Direction.CLOCKWISE
 
-    override fun availableShapes(): Set<Shape> = availableShapes
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
 
     override fun number(): String = "03"
 }

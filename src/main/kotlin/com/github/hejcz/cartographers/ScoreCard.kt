@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 interface ScoreCard {
     fun evaluate(board: Board): Int

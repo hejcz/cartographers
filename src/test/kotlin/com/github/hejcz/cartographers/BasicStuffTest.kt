@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -79,7 +79,12 @@ class BasicStuffTest {
 
     @Test
     internal fun `apply shape to board`() {
-        val game = (GameImplementation(listOf(TreeFortress14, Ruins), emptySet(), emptyMap()) { cards -> cards } as Game)
+        val game = (GameImplementation(
+            listOf(
+                TreeFortress14,
+                Ruins
+            ), emptySet(), emptyMap()
+        ) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.FOREST)
@@ -104,7 +109,12 @@ class BasicStuffTest {
 
     @Test
     internal fun `apply shape with different terrain to board`() {
-        val game = (GameImplementation(listOf(TreeFortress14, Ruins), emptySet(), emptyMap()) { cards -> cards } as Game)
+        val game = (GameImplementation(
+            listOf(
+                TreeFortress14,
+                Ruins
+            ), emptySet(), emptyMap()
+        ) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.CITY)
@@ -129,7 +139,11 @@ class BasicStuffTest {
 
     @Test
     internal fun `terrain is validated`() {
-        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards } as Game)
+        val game = (GameImplementation(
+            listOf(TreeFortress14),
+            emptySet(),
+            emptyMap()
+        ) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.WATER)
@@ -143,7 +157,11 @@ class BasicStuffTest {
     @Test
     internal fun `can't add shape on another shape`() {
         val game = (GameImplementation(
-            listOf(BigRiver07, ForgottenForest10, Ruins),
+            listOf(
+                BigRiver07,
+                ForgottenForest10,
+                Ruins
+            ),
             emptySet(),
             emptyMap()
         ) { cards -> cards } as Game)
@@ -195,7 +213,12 @@ class BasicStuffTest {
     @Test
     internal fun `ruins flow`() {
         val game = (GameImplementation(
-            listOf(Ruins, BigRiver07, ForgottenForest10, City09),
+            listOf(
+                Ruins,
+                BigRiver07,
+                ForgottenForest10,
+                City09
+            ),
             emptySet(),
             emptyMap()
         ) { cards -> cards } as Game)

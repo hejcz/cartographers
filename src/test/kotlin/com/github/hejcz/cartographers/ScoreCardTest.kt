@@ -1,5 +1,6 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
+import com.github.hejcz.cartographers.*
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 

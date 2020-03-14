@@ -1,4 +1,4 @@
-package com.github.hejcz
+package com.github.hejcz.cartographers
 
 import java.util.stream.IntStream
 import kotlin.math.max
