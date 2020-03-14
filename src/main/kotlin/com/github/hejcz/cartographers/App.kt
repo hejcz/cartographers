@@ -1,5 +1,7 @@
 package com.github.hejcz.cartographers
 
+import java.util.*
+
 data class RoundSummary(
     val quest1Points: Int,
     val quest2Points: Int,
@@ -38,6 +40,7 @@ fun Board.countMonsterPoints(): Int = all { it == Terrain.MONSTER }
     .count { terrainAt(it.first, it.second) == Terrain.EMPTY }
 
 class GameImplementation(
+    private val gameId: String = UUID.randomUUID().toString(),
     private var deck: List<Card> = listOf(
         TreeFortress14,
         BigRiver07,
