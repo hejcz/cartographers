@@ -1,32 +1,5 @@
 package com.github.hejcz
 
-enum class Terrain(private val str: () -> String) {
-    OUTSIDE_THE_MAP({ -> throw RuntimeException("cant print outside the map") }),
-    EMPTY({ -> "[ ]" }),
-    MOUNTAIN({ -> "[M]" }),
-    FOREST({ -> "[F]" }),
-    CITY({ -> "[C]" }),
-    PLAINS({ -> "[P]" }),
-    WATER({ -> "[W]" }),
-    MONSTER({ -> "[D]" });
-
-    override fun toString(): String {
-        return str()
-    }
-
-    companion object {
-        fun from(str: String) = when(str) {
-            "[D]" -> MONSTER
-            "[F]" -> FOREST
-            "[C]" -> CITY
-            "[P]" -> PLAINS
-            "[W]" -> WATER
-            "[M]" -> MOUNTAIN
-            else -> throw RuntimeException("should not create terrain from $str")
-        }
-    }
-}
-
 data class RoundSummary(
     val quest1Points: Int,
     val quest2Points: Int,
@@ -41,11 +14,6 @@ class Player(val id: String) {
     var coins = 0
     var summaries = listOf<RoundSummary>()
 }
-
-data class Response(
-    val error: String? = null,
-    val events: Any? = null
-)
 
 enum class Season(val pointsInRound: Int) {
     SPRING(8),
@@ -71,10 +39,10 @@ fun Board.countMonsterPoints(): Int = all { it == Terrain.MONSTER }
 class GameImplementation(
     private var deck: List<Card> = listOf(
         TreeFortress14,
-        BigRiver7,
+        BigRiver07,
         ForgottenForest10,
         Orchard13,
-        City9,
+        City09,
         Ruins,
         Ruins,
         RuralStream11,
@@ -122,14 +90,14 @@ class GameImplementation(
             ) { season, card -> season to card }.toMap(),
     private val shuffler: (List<Card>) -> List<Card> = { cards -> cards.shuffled() }
 ) : Game {
-    var season: Season = Season.SPRING
-    var currentCardIndex: Int = 0
-    var pointsInRound: Int = 0
-    var players: List<Player> = emptyList()
-    var playersDone: Int = 0
-    var ruinsDrawn: Boolean = false
-    var enemyDrawn: Boolean = false
-
+    private var season: Season = Season.SPRING
+    private var currentCardIndex: Int = 0
+    private var pointsInRound: Int = 0
+    private var players: List<Player> = emptyList()
+    private var playersDone: Int = 0
+    private var ruinsDrawn: Boolean = false
+    private var enemyDrawn: Boolean = false
+    private val recentEvents: Events = InMemoryEvents()
 
     private fun cleanBeforeNextTurn() {
         val monsterCard = monstersDeck.random()
@@ -141,14 +109,6 @@ class GameImplementation(
         ruinsDrawn = false
         enemyDrawn = false
         season = season.next()
-    }
-
-    private fun cleanBeforeNextCard() {
-        currentCardIndex += 1
-        pointsInRound += deck[currentCardIndex].points()
-        playersDone = 0
-        ruinsDrawn = false
-        enemyDrawn = false
         val quest1 = scoreCards.getValue(season)
         val quest2 = scoreCards.getValue(season.next())
         players.forEach {
@@ -158,63 +118,68 @@ class GameImplementation(
         }
     }
 
-    fun update(id: String, shape: Shape, terrain: Terrain): Response {
-        val player = player(id) ?: throw RuntimeException("No player with id $id")
+    private fun cleanBeforeNextCard() {
+        pointsInRound += deck[currentCardIndex].points()
+        currentCardIndex += 1
+        playersDone = 0
+        ruinsDrawn = false
+        enemyDrawn = false
+    }
+
+    fun update(nick: String, shape: Shape, terrain: Terrain) {
+        val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
         if (!currentCard.isValid(shape)) {
-            return Response(error = "invalid shape")
+            recentEvents.replace(nick, ErrorEvent("invalid shape"))
+            return
         }
         if (!currentCard.isValid(terrain)) {
-            return Response(error = "invalid shape")
+            recentEvents.replace(nick, ErrorEvent("invalid terrain"))
+            return
         }
         if (shape.isOutOfBounds()) {
-            return Response(error = "shape outside the map")
+            recentEvents.replace(nick, ErrorEvent("shape outside the map"))
+            return
         }
-        if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) == Terrain.MOUNTAIN }) {
-            return Response(error = "shape on mountain")
+        if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) != Terrain.EMPTY }) {
+            recentEvents.replace(nick, ErrorEvent("shape on taken point"))
+            return
         }
         if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }) {
-            return Response(error = "shape must be on ruins")
+            recentEvents.replace(nick, ErrorEvent("shape must be on ruins"))
+            return
         }
         player.board = player.board.draw(shape, terrain)
         if (currentCard.givesCoin(shape)) {
             player.coins++
         }
+        ++playersDone
         if (players.size == playersDone) {
             if (season.pointsInRound <= pointsInRound) {
                 if (season == Season.WINTER) {
-                    return endGame()
+                    endGame()
+                    return
                 }
                 cleanBeforeNextTurn()
-                return Response(
-                    events = mapOf(
-                        "scores" to players.map { it.id to it.summaries.last().sum() }.toMap(),
-                        "nextCard" to deck[currentCardIndex]
-                    )
+                recentEvents.replaceAll(
+                    NewCardEvent(deck[currentCardIndex].number()),
+                    ScoresEvent(players.map { it.id to it.summaries.last().sum() }.toMap())
                 )
             } else {
                 cleanBeforeNextCard()
-                return Response(
-                    events = mapOf(
-                        "nextCard" to deck[currentCardIndex]
-                    )
+                cleanBeforeNextTurn()
+                recentEvents.replaceAll(
+                    NewCardEvent(deck[currentCardIndex].number())
                 )
             }
         }
-
-        return Response()
     }
 
-    private fun endGame(): Response {
+    private fun endGame() {
         val idToTotalScore =
             players.map { it.id to it.summaries.sumBy(RoundSummary::sum) }.toMap()
         val maxScore = idToTotalScore.values.max() ?: 0
-        return Response(
-            events = mapOf(
-                "winners" to idToTotalScore.filterValues { it == maxScore }.keys,
-                "scores" to idToTotalScore
-            )
-        )
+        recentEvents.replaceAll(ScoresEvent(idToTotalScore))
     }
 
     override fun join(nick: String): GameImplementation {
@@ -227,13 +192,15 @@ class GameImplementation(
     }
 
     override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): GameImplementation {
-        val (error, events) = update(nick, Shape.create(points), terrain)
+        update(nick, Shape.create(points), terrain)
         return this
     }
 
     private fun player(nick: String) = players.find { it.id == nick }
 
     override fun boardOf(nick: String): Board = player(nick)?.board!!
+
+    override fun recentEvents(nick: String): List<Event> = recentEvents.of(nick)
 }
 
 interface Game {
@@ -241,6 +208,7 @@ interface Game {
     fun start(): Game
     fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game
     fun boardOf(nick: String): Board
+    fun recentEvents(nick: String): List<Event>
 }
 
 fun main() {

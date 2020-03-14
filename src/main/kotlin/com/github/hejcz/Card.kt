@@ -11,9 +11,12 @@ interface Card {
 
     fun givesCoin(shape: Shape): Boolean
     fun isValid(terrain: Terrain): Boolean
+    fun number(): String
 }
 
 object TreeFortress14 : Card {
+    override fun number(): String = "14"
+
     private val availableShapes =
         Shape.create(
             """
@@ -31,7 +34,9 @@ object TreeFortress14 : Card {
     override fun givesCoin(shape: Shape): Boolean = false
 }
 
-object BigRiver7 : Card {
+object BigRiver07 : Card {
+    override fun number(): String = "07"
+
     private val availableShapes =
         Shape.create(
             """
@@ -40,13 +45,13 @@ object BigRiver7 : Card {
             [ ]
             """
         ).createAllVariations() +
-        Shape.create(
-            """
+                Shape.create(
+                    """
                   [ ]
                [ ][ ]
             [ ][ ]
             """
-        ).createAllVariations()
+                ).createAllVariations()
 
     override fun availableShapes(): Set<Shape> = availableShapes
 
@@ -58,6 +63,8 @@ object BigRiver7 : Card {
 }
 
 object ForgottenForest10 : Card {
+    override fun number(): String = "10"
+
     private val availableShapes =
         Shape.create(
             """
@@ -65,13 +72,13 @@ object ForgottenForest10 : Card {
                [ ]
             """
         ).createAllVariations() +
-        Shape.create(
-            """
+                Shape.create(
+                    """
             [ ]
             [ ][ ]
                [ ]
             """
-        ).createAllVariations()
+                ).createAllVariations()
 
     override fun availableShapes(): Set<Shape> = availableShapes
 
@@ -83,6 +90,8 @@ object ForgottenForest10 : Card {
 }
 
 object Orchard13 : Card {
+    override fun number(): String = "13"
+
     private val availableShapes =
         Shape.create(
             """
@@ -100,7 +109,9 @@ object Orchard13 : Card {
     override fun givesCoin(shape: Shape): Boolean = false
 }
 
-object City9 : Card {
+object City09 : Card {
+    override fun number(): String = "09"
+
     private val availableShapes =
         Shape.create(
             """
@@ -108,12 +119,12 @@ object City9 : Card {
             [ ][ ]
             """
         ).createAllVariations() +
-        Shape.create(
-            """
+                Shape.create(
+                    """
             [ ][ ][ ]
             [ ][ ]
             """
-        ).createAllVariations()
+                ).createAllVariations()
 
     override fun availableShapes(): Set<Shape> = availableShapes
 
@@ -125,6 +136,8 @@ object City9 : Card {
 }
 
 object Ruins : Card {
+    override fun number(): String = "ns"
+
 
     override fun availableShapes(): Set<Shape> = emptySet()
 
@@ -136,6 +149,8 @@ object Ruins : Card {
 }
 
 object RuralStream11 : Card {
+    override fun number(): String = "11"
+
     private val availableShapes =
         Shape.create(
             """
@@ -155,6 +170,8 @@ object RuralStream11 : Card {
 }
 
 object Cracks17 : Card {
+    override fun number(): String = "17"
+
     private val availableShapes =
         Shape.create(
             """
@@ -174,6 +191,8 @@ object Cracks17 : Card {
 }
 
 object Farm12 : Card {
+    override fun number(): String = "12"
+
     private val availableShapes =
         Shape.create(
             """
@@ -195,6 +214,8 @@ object Farm12 : Card {
 }
 
 object Fends15 : Card {
+    override fun number(): String = "15"
+
     private val availableShapes =
         Shape.create(
             """
@@ -216,6 +237,8 @@ object Fends15 : Card {
 }
 
 object Fields08 : Card {
+    override fun number(): String = "08"
+
     private val availableShapes =
         Shape.create(
             """
@@ -223,13 +246,13 @@ object Fields08 : Card {
             [ ]
             """
         ).createAllVariations() +
-        Shape.create(
-            """
+                Shape.create(
+                    """
                [ ]
             [ ][ ][ ]
                [ ]
             """
-        ).createAllVariations()
+                ).createAllVariations()
 
     override fun availableShapes(): Set<Shape> = availableShapes
 
@@ -241,6 +264,8 @@ object Fields08 : Card {
 }
 
 object FishermanVillage16 : Card {
+    override fun number(): String = "16"
+
     private val availableShapes =
         Shape.create(
             """

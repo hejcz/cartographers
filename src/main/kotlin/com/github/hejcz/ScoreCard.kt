@@ -10,9 +10,9 @@ object ForestTower28 : ScoreCard {
         return forests.fold(0) { total, (x, y) ->
             when {
                 x < 0 && board.terrainAt(x - 1, y) == Terrain.EMPTY ||
-                    x > -10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
-                    y > 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
-                    y < 10 && board.terrainAt(x, y + 1) == Terrain.EMPTY  -> {
+                        x > -10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
+                        y > 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
+                        y < 10 && board.terrainAt(x, y + 1) == Terrain.EMPTY -> {
                     total
                 }
                 else -> total + 1
@@ -86,47 +86,49 @@ object FertilePlain36 : ScoreCard {
 
 object FieldPuddle30 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        board.all {it == Terrain.WATER }
+        board.all { it == Terrain.WATER }
             .count { lake -> board.adjacent(lake).any { (x, y) -> board.terrainAt(x, y) == Terrain.PLAINS } } +
-        board.all {it == Terrain.PLAINS }
-            .count { plains -> board.adjacent(plains).any { (x, y) -> board.terrainAt(x, y) == Terrain.WATER } }
+                board.all { it == Terrain.PLAINS }
+                    .count { plains -> board.adjacent(plains).any { (x, y) -> board.terrainAt(x, y) == Terrain.WATER } }
 }
 
 object MagesValley30 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        2 * board.all {it == Terrain.WATER }
+        2 * board.all { it == Terrain.WATER }
             .count { lake -> board.adjacent(lake).any { (x, y) -> board.terrainAt(x, y) == Terrain.MOUNTAIN } } +
-        board.all {it == Terrain.PLAINS }
-            .count { plains -> board.adjacent(plains).any { (x, y) -> board.terrainAt(x, y) == Terrain.MOUNTAIN } }
+                board.all { it == Terrain.PLAINS }
+                    .count { plains ->
+                        board.adjacent(plains).any { (x, y) -> board.terrainAt(x, y) == Terrain.MOUNTAIN }
+                    }
 }
 
 object VastEnbankment33 : ScoreCard {
-    override fun evaluate(board: Board): Int  = 3 * (
-        board.connectedTerrains(Terrain.WATER).count { lake ->
-            val adjacent = lake.flatMap { board.adjacent(it) }.toSet()
-            if (adjacent.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
-                false
-            } else {
-                adjacent.none { (x, y) -> board.terrainAt(x, y) != Terrain.PLAINS }
-            }
-        } +
-        board.connectedTerrains(Terrain.PLAINS).count { lake ->
-            val adjacent = lake.flatMap { board.adjacent(it) }.toSet()
-            if (adjacent.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
-                false
-            } else {
-                adjacent.none { (x, y) -> board.terrainAt(x, y) != Terrain.WATER }
-            }
-        }
-    )
+    override fun evaluate(board: Board): Int = 3 * (
+            board.connectedTerrains(Terrain.WATER).count { lake ->
+                val adjacent = lake.flatMap { board.adjacent(it) }.toSet()
+                if (adjacent.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
+                    false
+                } else {
+                    adjacent.none { (x, y) -> board.terrainAt(x, y) != Terrain.PLAINS }
+                }
+            } +
+                    board.connectedTerrains(Terrain.PLAINS).count { lake ->
+                        val adjacent = lake.flatMap { board.adjacent(it) }.toSet()
+                        if (adjacent.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
+                            false
+                        } else {
+                            adjacent.none { (x, y) -> board.terrainAt(x, y) != Terrain.WATER }
+                        }
+                    }
+            )
 }
 
 object GoldenBreadbasket : ScoreCard {
     override fun evaluate(board: Board): Int =
         3 * board.all { it == Terrain.PLAINS }
             .count { (x, y) -> board.hasRuinsOn(x, y) } +
-        board.all { it == Terrain.WATER }
-            .count { board.adjacent(it).any { (x, y) -> board.hasRuinsOn(x, y) } }
+                board.all { it == Terrain.WATER }
+                    .count { board.adjacent(it).any { (x, y) -> board.hasRuinsOn(x, y) } }
 }
 
 object Hideouts41 : ScoreCard {
@@ -135,9 +137,9 @@ object Hideouts41 : ScoreCard {
         return emptyTerrains.fold(0) { total, (x, y) ->
             when {
                 x < 0 && board.terrainAt(x - 1, y) == Terrain.EMPTY ||
-                    x > -10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
-                    y > 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
-                    y < 10 && board.terrainAt(x, y + 1) == Terrain.EMPTY  -> {
+                        x > -10 && board.terrainAt(x + 1, y) == Terrain.EMPTY ||
+                        y > 0 && board.terrainAt(x, y - 1) == Terrain.EMPTY ||
+                        y < 10 && board.terrainAt(x, y + 1) == Terrain.EMPTY -> {
                     total
                 }
                 else -> total + 1

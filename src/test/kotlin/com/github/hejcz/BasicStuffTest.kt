@@ -79,7 +79,7 @@ class BasicStuffTest {
 
     @Test
     internal fun `apply shape to board`() {
-        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards} as Game)
+        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.FOREST)
@@ -98,12 +98,13 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][F][M][ ][ ][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """,
-        "shape was added to board")
+            "shape was added to board"
+        )
     }
 
     @Test
     internal fun `apply shape with different terrain to board`() {
-        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards} as Game)
+        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.CITY)
@@ -122,18 +123,72 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][C][M][ ][ ][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """,
-            "shape was added to board")
+            "shape was added to board"
+        )
     }
 
     @Test
     internal fun `terrain is validated`() {
-        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards} as Game)
+        val game = (GameImplementation(listOf(TreeFortress14), emptySet(), emptyMap()) { cards -> cards } as Game)
             .join("julian")
             .start()
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.WATER)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
             defaultMap,
-            "shape was not added to board cause tree fortress accepts city and forest only")
+            "shape was not added to board cause tree fortress accepts city and forest only"
+        )
+    }
+
+    @Test
+    internal fun `can't add shape on another shape`() {
+        val game = (GameImplementation(
+            listOf(BigRiver07, ForgottenForest10, Ruins),
+            emptySet(),
+            emptyMap()
+        ) { cards -> cards } as Game)
+            .join("julian")
+            .start()
+            .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -7 to 8), Terrain.WATER)
+        val board1 = game.boardOf("julian")
+        Assertions.assertEquals(
+            board1.toString(),
+            """
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][M][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][M][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][W][W][ ][ ]
+[ ][ ][M][ ][ ][ ][W][W][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][W][M][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+""",
+            "shape was not added to board"
+        )
+        Assertions.assertEquals(
+            board1.toString(),
+            game.draw("julian", setOf(-7 to 7, -6 to 6), Terrain.FOREST).boardOf("julian").toString(),
+            "shape was placed on another shape"
+        )
+        Assertions.assertEquals(
+            """
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][M][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][M][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][F][ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][F][W][W][ ][ ]
+[ ][ ][M][ ][ ][ ][W][W][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][W][M][ ][ ][ ]
+[ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+""",
+            game.draw("julian", setOf(-6 to 5, -7 to 6), Terrain.FOREST).boardOf("julian").toString(),
+            "shape was not added to board"
+        )
     }
 }

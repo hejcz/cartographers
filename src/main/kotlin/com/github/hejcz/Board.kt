@@ -113,14 +113,16 @@ class MapBoard(private val board: Map<Point, Terrain>) :
             val row = x - offset
             val col = y + offset
             IntStream.range(0, size)
-                .allMatch { terrainAt(row, y + it) !in setOf(
-                    Terrain.EMPTY,
-                    Terrain.OUTSIDE_THE_MAP
-                )
-                        && terrainAt(x - it, col) !in setOf(
-                    Terrain.EMPTY,
-                    Terrain.OUTSIDE_THE_MAP
-                ) }
+                .allMatch {
+                    terrainAt(row, y + it) !in setOf(
+                        Terrain.EMPTY,
+                        Terrain.OUTSIDE_THE_MAP
+                    )
+                            && terrainAt(x - it, col) !in setOf(
+                        Terrain.EMPTY,
+                        Terrain.OUTSIDE_THE_MAP
+                    )
+                }
         }
     }
 

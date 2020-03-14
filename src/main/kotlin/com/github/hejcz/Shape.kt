@@ -24,7 +24,7 @@ interface Shape {
                     }
                     .flatten()
                     .toSet()
-            )
+            ).normalize()
     }
 }
 
