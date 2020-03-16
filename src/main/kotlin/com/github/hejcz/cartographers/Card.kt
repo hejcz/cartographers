@@ -141,8 +141,7 @@ object City09 : Card {
 }
 
 object Ruins : Card {
-    override fun number(): String = "ns"
-
+    override fun number(): String = "ruins"
 
     override fun availableShapes(): Set<Shape> = emptySet()
 

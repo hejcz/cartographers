@@ -103,8 +103,8 @@ fun main() {
                                     "start" -> {
                                         wsToGameId[outgoing]?.let { gid ->
                                             withGameLock(gid) {
-                                                gameIdToGame[gid]?.start()?.let {
-                                                    gameIdToGame[gid] = it
+                                                gameIdToGame[gid]?.start()?.let { newGame: Game ->
+                                                    gameIdToGame[gid] = newGame
                                                     runBlocking {
                                                         wsToGameId.filterValues { gameId -> gameId == gid }
                                                             .forEach { (channel, _) ->
@@ -112,7 +112,7 @@ fun main() {
                                                                     channel.send(
                                                                         Frame.Text(
                                                                             mapper.writeValueAsString(
-                                                                                it.recentEvents(
+                                                                                newGame.recentEvents(
                                                                                     nick
                                                                                 )
                                                                             )

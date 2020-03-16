@@ -4,6 +4,23 @@ ws.onopen = function() {
 };
 ws.onmessage = function(event) {
     console.log(event);
+    const events = JSON.parse(event.data);
+    for (const event of events) {
+        if (event["type"] === "ACCEPTED_SHAPE") {
+            const {
+                points,
+                terrain
+            } = event;
+            points.filter(it => {
+                const match = board.find(cell => cell.x === it.x && cell.y === it.y);
+                if (match) {
+                    match.terrain = terrain;
+                    match.locked = true;
+                }
+            });
+            drawBoard();
+        }
+    }
 };
 
 const rootSvg = d3.select("#game")
@@ -41,14 +58,14 @@ for (const cell of board) {
         || cell.x == -8 && cell.y == 2
         || cell.x == -9 && cell.y == 7
     ) {
-        cell.type = "MOUNTAINS";
+        cell.type = "MOUNTAIN";
         cell.locked = true;
     }
 }
 
 const colorByType = {
     "EMPTY": "255,230,186",
-    "MOUNTAINS": "107, 79, 0",
+    "MOUNTAIN": "107, 79, 0",
     "RUINS": "201, 201, 201",
     "FOREST": "37, 179, 89",
     "WATER": "71, 195, 214",
@@ -73,16 +90,17 @@ rootSvg.select("#terrain").selectAll("rect")
     .style("fill", function (d) { return `rgb(${colorByType[d]})` })
     .on("click", function (d) {
         currentTerrain = d;
-        points.forEach(it => { it.type = "EMPTY"; });
+        [...points].filter(it => !it.locked).forEach(it => { it.type = "EMPTY"; });
         points.clear();
-        selectedRuins.forEach(it => { it.type = "RUINS"; });
+        [...selectedRuins].filter(it => !it.locked).forEach(it => { it.type = "RUINS"; });
         selectedRuins.clear();
         drawBoard();
      });
 
-rootSvg.select("#submit")
-    .on("click", function (d) {
-
+d3.select("#submit")
+    .on("click", function (event) {
+        const msg = {"type": "draw", "data": { "points": [...points].map(cell => ({"x": cell.x, "y": cell.y})), "terrain": currentTerrain }};
+        ws.send(JSON.stringify(msg));
      });
 
 drawBoard();

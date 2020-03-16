@@ -55,13 +55,13 @@ class GameImplementation(
         Fends15,
         Fields08,
         FishermanVillage16
-    ),
-    private var monstersDeck: Set<Card> = setOf(
+    ).shuffled(),
+    private var monstersDeck: List<Card> = setOf(
         GoblinsAttack01,
         BogeymanAssault02,
         CoboldsCharge03,
         GnollsInvasion04
-    ),
+    ).shuffled(),
     private var scoreCards: Map<Season, ScoreCard> =
         listOf(
             Season.SPRING,
@@ -137,30 +137,31 @@ class GameImplementation(
     }
 
     private fun update(nick: String, shape: Shape, terrain: Terrain) {
+        recentEvents.clear()
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
         if (!currentCard.isValid(shape)) {
-            recentEvents.replace(nick, ErrorEvent("invalid shape"))
+            recentEvents.add(nick, ErrorEvent("invalid shape"))
             return
         }
         if (!currentCard.isValid(terrain)) {
-            recentEvents.replace(nick, ErrorEvent("invalid terrain"))
+            recentEvents.add(nick, ErrorEvent("invalid terrain"))
             return
         }
         if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) == Terrain.OUTSIDE_THE_MAP }) {
-            recentEvents.replace(nick,
+            recentEvents.add(nick,
                 ErrorEvent("shape outside the map")
             )
             return
         }
         if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) != Terrain.EMPTY }) {
-            recentEvents.replace(nick,
+            recentEvents.add(nick,
                 ErrorEvent("shape on taken point")
             )
             return
         }
         if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }) {
-            recentEvents.replace(nick,
+            recentEvents.add(nick,
                 ErrorEvent("shape must be on ruins")
             )
             return
@@ -170,6 +171,7 @@ class GameImplementation(
             player.coins++
         }
         ++playersDone
+        recentEvents.add(nick, AcceptedShape(terrain, shape.toXYPoints().map { (x, y) -> Point(x, y) }))
         if (players.size == playersDone) {
             if (season.pointsInRound <= pointsInRound) {
                 if (season == Season.WINTER) {
@@ -178,13 +180,13 @@ class GameImplementation(
                 }
                 cleanBeforeNextTurn()
                 onNextCard()
-                recentEvents.replaceAll(
+                recentEvents.addAll(
                     NewCardEvent(deck[currentCardIndex].number()),
                     ScoresEvent(players.map { it.nick to it.summaries.last().sum() }.toMap())
                 )
             } else {
                 cleanBeforeNextCard()
-                recentEvents.replaceAll(
+                recentEvents.addAll(
                     NewCardEvent(deck[currentCardIndex].number())
                 )
             }
@@ -218,7 +220,7 @@ class GameImplementation(
     private fun endGame() {
         val idToTotalScore =
             players.map { it.nick to it.summaries.sumBy(RoundSummary::sum) }.toMap()
-        recentEvents.replaceAll(ScoresEvent(idToTotalScore))
+        recentEvents.addAll(ScoresEvent(idToTotalScore))
     }
 
     override fun join(nick: String): Game {
@@ -228,7 +230,7 @@ class GameImplementation(
 
     override fun start(): Game {
         recentEvents = InMemoryEvents(players.map { it.nick })
-        recentEvents.replaceAll(NewCardEvent(deck[currentCardIndex].number()))
+        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number()))
         onNextCard()
         return this
     }
