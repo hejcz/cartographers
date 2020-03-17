@@ -80,10 +80,9 @@ class BasicStuffTest {
     @Test
     internal fun `apply shape to board`() {
         val game = (GameImplementation(
-            listOf(
-                TreeFortress14,
-                Ruins
-            ), emptySet(), emptyMap()
+            deck = listOf(TreeFortress14, Ruins),
+            monstersDeck = emptyList(),
+            scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
             .start()
@@ -110,10 +109,9 @@ class BasicStuffTest {
     @Test
     internal fun `apply shape with different terrain to board`() {
         val game = (GameImplementation(
-            listOf(
-                TreeFortress14,
-                Ruins
-            ), emptySet(), emptyMap()
+            deck = listOf(TreeFortress14, Ruins),
+            monstersDeck = emptyList(),
+            scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
             .start()
@@ -140,9 +138,9 @@ class BasicStuffTest {
     @Test
     internal fun `terrain is validated`() {
         val game = (GameImplementation(
-            listOf(TreeFortress14),
-            emptySet(),
-            emptyMap()
+            deck = listOf(TreeFortress14),
+            monstersDeck = emptyList(),
+            scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
             .start()
@@ -157,13 +155,9 @@ class BasicStuffTest {
     @Test
     internal fun `can't add shape on another shape`() {
         val game = (GameImplementation(
-            listOf(
-                BigRiver07,
-                ForgottenForest10,
-                Ruins
-            ),
-            emptySet(),
-            emptyMap()
+            deck = listOf(BigRiver07, ForgottenForest10, Ruins),
+            monstersDeck = emptyList(),
+            scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
             .start()
@@ -213,14 +207,9 @@ class BasicStuffTest {
     @Test
     internal fun `ruins flow`() {
         val game = (GameImplementation(
-            listOf(
-                Ruins,
-                BigRiver07,
-                ForgottenForest10,
-                City09
-            ),
-            emptySet(),
-            emptyMap()
+            deck = listOf(Ruins, BigRiver07, ForgottenForest10, City09),
+            monstersDeck = emptyList(),
+            scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
             .start()

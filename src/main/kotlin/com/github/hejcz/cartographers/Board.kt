@@ -14,6 +14,7 @@ interface Board {
     fun connectedTerrains(terrain: Terrain): Set<Set<Pair<Int, Int>>>
     fun adjacent(xy: Pair<Int, Int>): Set<Pair<Int, Int>>
     fun hasRuinsOn(x: Int, y: Int): Boolean
+    fun noPlaceToDraw(shapes: Set<Shape>): Boolean
 
     companion object {
         fun create(): Board =
@@ -153,6 +154,23 @@ class MapBoard(private val board: Map<Point, Terrain>) :
                 || x == -8 && y == 1
                 || x == -8 && y == 9
                 || x == -9 && y == 5
+
+    override fun noPlaceToDraw(shapes: Set<Shape>): Boolean = shapes.none { shape ->
+        val maxX = shape.toXYPoints().maxBy { it.first }?.first ?: throw RuntimeException("Empty shape")
+        val points = shape.toXYPoints().map { it.first - maxX to it.second }
+        val minX = points.minBy { it.first }?.first ?: throw RuntimeException("Empty shape")
+        val maxY = points.maxBy { it.second }?.second ?: throw RuntimeException("Empty shape")
+        val width = maxY + 1
+        val height = -minX + 1
+        for (row in (0..(11 - height))) {
+            for (col in (0..(11 - width))) {
+                if (points.all { terrainAt(it.first - row, it.second + col) == Terrain.EMPTY }) {
+                    return@none true
+                }
+            }
+        }
+        false
+    }
 
     private fun terrainAt(p: Point): Terrain = when {
         p.x > 0 || p.x < -10 || p.y < 0 || p.y > 10 -> Terrain.OUTSIDE_THE_MAP

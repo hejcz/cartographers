@@ -48,8 +48,7 @@ data class PointGroupShape(
 
     override fun toXYPoints(): Set<Pair<Int, Int>> = points
 
-    override fun normalize(): Shape =
-        moveTopLeftToZeroZero(points)
+    override fun normalize(): Shape = moveTopLeftToZeroZero(points)
 
     override fun size(): Int = points.size
 

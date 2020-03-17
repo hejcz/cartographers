@@ -185,17 +185,15 @@ function drawBoard() {
     const cells = rootSvg.select("#board")
         .attr("transform", function (d) { return `translate(0 45)`; })
         .selectAll("rect")
-        .data(board)
-        .style("fill", function (d) { return `rgb(${colorByType[d.type]})` });
+        .data(board);
 
-    cells.enter()
+    const enter = cells.enter()
          .append("rect")
          .attr("width", 50)
          .attr("height", 50)
          .attr("transform", function (d) { return `translate(${d.y * 50} ${-d.x * 50})`; })
          .style("stroke-width", "1px")
          .style("stroke", "grey")
-         .style("fill", function (d) { return `rgb(${colorByType[d.type]})` })
          .on("click", function (d) {
             if (d.locked) {
                 return;
@@ -207,13 +205,18 @@ function drawBoard() {
                 points.add(d);
                 d.type = currentTerrain;
             } else {
-                d.type = "EMPTY";
                 if (selectedRuins.has(d)) {
                     selectedRuins.delete(d);
                     d.type = "RUINS";
+                } else {
+                    d.type = "EMPTY";
                 }
                 points.delete(d);
             }
             drawBoard();
          });
+
+     cells.merge(enter)
+         .style("fill-opacity", function (d) { return d.type == "EMPTY" || d.locked ? 1.0 : 0.7; })
+         .style("fill", function (d) { return `rgb(${colorByType[d.type]})` });
 }

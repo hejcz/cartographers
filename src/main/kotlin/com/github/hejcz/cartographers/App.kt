@@ -140,7 +140,9 @@ class GameImplementation(
         recentEvents.clear()
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
-        if (!currentCard.isValid(shape)) {
+        if (!currentCard.isValid(shape)
+            && !(shape.size() == 1 && player.board.noPlaceToDraw(shape.createAllVariations()))
+        ) {
             recentEvents.add(nick, ErrorEvent("invalid shape"))
             return
         }
