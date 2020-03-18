@@ -446,7 +446,7 @@ class ScoreCardTest {
 
     @Test
     internal fun `golden breadbasket 1`() {
-        val points = GoldenBreadbasket.evaluate(
+        val points = GoldenBreadbasket32.evaluate(
             Board.create(
                 """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
@@ -468,7 +468,7 @@ class ScoreCardTest {
 
     @Test
     internal fun `golden breadbasket 2`() {
-        val points = GoldenBreadbasket.evaluate(
+        val points = GoldenBreadbasket32.evaluate(
             Board.create(
                 """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
@@ -490,7 +490,7 @@ class ScoreCardTest {
 
     @Test
     internal fun `golden breadbasket 3`() {
-        val points = GoldenBreadbasket.evaluate(
+        val points = GoldenBreadbasket32.evaluate(
             Board.create(
                 """
 [ ][ ][ ][ ][ ][W][ ][ ][ ][ ][ ]
@@ -512,7 +512,7 @@ class ScoreCardTest {
 
     @Test
     internal fun `golden breadbasket 4`() {
-        val points = GoldenBreadbasket.evaluate(
+        val points = GoldenBreadbasket32.evaluate(
             Board.create(
                 """
 [ ][ ][ ][ ][ ][W][ ][ ][ ][ ][ ]

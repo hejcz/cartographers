@@ -92,7 +92,7 @@ object FieldPuddle30 : ScoreCard {
                     .count { plains -> board.adjacent(plains).any { (x, y) -> board.terrainAt(x, y) == Terrain.WATER } }
 }
 
-object MagesValley30 : ScoreCard {
+object MagesValley31 : ScoreCard {
     override fun evaluate(board: Board): Int =
         2 * board.all { it == Terrain.WATER }
             .count { lake -> board.adjacent(lake).any { (x, y) -> board.terrainAt(x, y) == Terrain.MOUNTAIN } } +
@@ -123,7 +123,7 @@ object VastEnbankment33 : ScoreCard {
             )
 }
 
-object GoldenBreadbasket : ScoreCard {
+object GoldenBreadbasket32 : ScoreCard {
     override fun evaluate(board: Board): Int =
         3 * board.all { it == Terrain.PLAINS }
             .count { (x, y) -> board.hasRuinsOn(x, y) } +

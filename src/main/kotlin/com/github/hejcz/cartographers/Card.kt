@@ -140,9 +140,7 @@ object City09 : Card {
     override fun givesCoin(shape: Shape): Boolean = shape.size() == 3
 }
 
-object Ruins : Card {
-    override fun number(): String = "ruins"
-
+sealed class Ruins : Card {
     override fun availableShapes(): Set<Shape> = emptySet()
 
     override fun isValid(terrain: Terrain): Boolean = false
@@ -150,6 +148,14 @@ object Ruins : Card {
     override fun points(): Int = 0
 
     override fun givesCoin(shape: Shape): Boolean = false
+}
+
+object Ruins05 : Ruins() {
+    override fun number(): String = "05"
+}
+
+object Ruins06 : Ruins() {
+    override fun number(): String = "06"
 }
 
 object RuralStream11 : Card {

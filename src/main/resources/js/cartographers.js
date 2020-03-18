@@ -1,27 +1,27 @@
-const ws = new WebSocket("ws://localhost:8080/api");
-ws.onopen = function() {
-    ws.send(JSON.stringify({"type": "join", "data": { "nick": "julian", "gid": "game1" }}));
-};
-ws.onmessage = function(event) {
-    console.log(event);
-    const events = JSON.parse(event.data);
-    for (const event of events) {
-        if (event["type"] === "ACCEPTED_SHAPE") {
-            const {
-                points,
-                terrain
-            } = event;
-            points.filter(it => {
-                const match = board.find(cell => cell.x === it.x && cell.y === it.y);
-                if (match) {
-                    match.terrain = terrain;
-                    match.locked = true;
-                }
-            });
-            drawBoard();
-        }
-    }
-};
+//const ws = new WebSocket("ws://localhost:8080/api");
+//ws.onopen = function() {
+//    ws.send(JSON.stringify({"type": "join", "data": { "nick": "julian", "gid": "game1" }}));
+//};
+//ws.onmessage = function(event) {
+//    console.log(event);
+//    const events = JSON.parse(event.data);
+//    for (const event of events) {
+//        if (event["type"] === "ACCEPTED_SHAPE") {
+//            const {
+//                points,
+//                terrain
+//            } = event;
+//            points.filter(it => {
+//                const match = board.find(cell => cell.x === it.x && cell.y === it.y);
+//                if (match) {
+//                    match.terrain = terrain;
+//                    match.locked = true;
+//                }
+//            });
+//            drawBoard();
+//        }
+//    }
+//};
 
 const rootSvg = d3.select("#game")
 rootSvg.append("svg")
@@ -61,17 +61,6 @@ for (const cell of board) {
         cell.type = "MOUNTAIN";
         cell.locked = true;
     }
-}
-
-const colorByType = {
-    "EMPTY": "255,230,186",
-    "MOUNTAIN": "107, 79, 0",
-    "RUINS": "201, 201, 201",
-    "FOREST": "37, 179, 89",
-    "WATER": "71, 195, 214",
-    "PLAINS": "255, 226, 120",
-    "CITY": "196, 47, 27",
-    "MONSTER": "101, 6, 148"
 }
 
 let currentTerrain = "FOREST";

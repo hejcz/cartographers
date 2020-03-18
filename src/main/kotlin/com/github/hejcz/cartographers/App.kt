@@ -39,68 +39,33 @@ fun Board.countMonsterPoints(): Int = all { it == Terrain.MONSTER }
     .toSet()
     .count { terrainAt(it.first, it.second) == Terrain.EMPTY }
 
+private fun cards() = listOf(
+    Ruins05, Ruins06, BigRiver07, Fields08, City09, ForgottenForest10, RuralStream11,
+    Farm12, Orchard13, TreeFortress14, Fends15, FishermanVillage16, Cracks17
+)
+
+private fun monsters(): Set<MonsterCard> =
+    setOf(GoblinsAttack01, BogeymanAssault02, CoboldsCharge03, GnollsInvasion04)
+
+private fun randomScoreCards(): List<ScoreCard> =
+    listOf(
+        setOf(ForestGuard26, Coppice27, ForestTower28, MountainWoods29).random(),
+        setOf(Colony34, HugeCity35, FertilePlain36, Fortress37).random(),
+        setOf(FieldPuddle30, MagesValley31, GoldenBreadbasket32, VastEnbankment33).random(),
+        setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random()
+    )
+
 class GameImplementation(
     private val gameId: String = UUID.randomUUID().toString(),
-    private var deck: List<Card> = listOf(
-        TreeFortress14,
-        BigRiver07,
-        ForgottenForest10,
-        Orchard13,
-        City09,
-        Ruins,
-        Ruins,
-        RuralStream11,
-        Cracks17,
-        Farm12,
-        Fends15,
-        Fields08,
-        FishermanVillage16
-    ).shuffled(),
-    private var monstersDeck: List<Card> = setOf(
-        GoblinsAttack01,
-        BogeymanAssault02,
-        CoboldsCharge03,
-        GnollsInvasion04
-    ).shuffled(),
+    private var deck: List<Card> = cards().shuffled(),
+    private var monstersDeck: List<Card> = monsters().shuffled(),
     private var scoreCards: Map<Season, ScoreCard> =
-        listOf(
-            Season.SPRING,
-            Season.SUMMER,
-            Season.AUTUMN,
-            Season.WINTER
-        )
-            .zip(
-                listOf(
-                    setOf(
-                        ForestTower28,
-                        ForestGuard26,
-                        Coppice27,
-                        MountainWoods29
-                    ).random(),
-                    setOf(
-                        HugeCity35,
-                        Fortress37,
-                        Colony34,
-                        FertilePlain36
-                    ).random(),
-                    setOf(
-                        FieldPuddle30,
-                        MagesValley30,
-                        VastEnbankment33,
-                        GoldenBreadbasket
-                    ).random(),
-                    setOf(
-                        Hideouts41,
-                        LostDemesne39,
-                        Borderlands38,
-                        TradingRoad40
-                    ).random()
-                ).shuffled()
-            ) { season, card -> season to card }.toMap(),
+        listOf(Season.SPRING, Season.SUMMER, Season.AUTUMN, Season.WINTER)
+            .zip(randomScoreCards().shuffled()) { season, card -> season to card }
+            .toMap(),
     private val shuffler: (List<Card>) -> List<Card> = { cards -> cards.shuffled() }
 ) : Game {
-    private var season: Season =
-        Season.SPRING
+    private var season: Season = Season.SPRING
     private var currentCardIndex: Int = 0
     private var pointsInRound: Int = 0
     private var players: List<Player> = emptyList()
@@ -151,21 +116,15 @@ class GameImplementation(
             return
         }
         if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) == Terrain.OUTSIDE_THE_MAP }) {
-            recentEvents.add(nick,
-                ErrorEvent("shape outside the map")
-            )
+            recentEvents.add(nick, ErrorEvent("shape outside the map"))
             return
         }
         if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) != Terrain.EMPTY }) {
-            recentEvents.add(nick,
-                ErrorEvent("shape on taken point")
-            )
+            recentEvents.add(nick, ErrorEvent("shape on taken point"))
             return
         }
         if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }) {
-            recentEvents.add(nick,
-                ErrorEvent("shape must be on ruins")
-            )
+            recentEvents.add(nick, ErrorEvent("shape must be on ruins"))
             return
         }
         player.board = player.board.draw(shape, terrain)

@@ -10,9 +10,13 @@ body {
 #game {
     width: 600px;
     height: 1000px;
-    margin-top: 20px;
 }
 
 #submit, #start, #leave {
+    margin-top: 20px;
+}
+
+svg {
+    display: block;
     margin-top: 20px;
 }
