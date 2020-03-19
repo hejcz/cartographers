@@ -58,7 +58,7 @@ fun main() {
         }
     }
 
-    embeddedServer(Netty, 8080) {
+    embeddedServer(Netty, System.getProperty("SERVER_PORT", "8080").toInt()) {
         install(WebSockets)
         routing {
             static("game") {

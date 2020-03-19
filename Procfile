@@ -1,0 +1,1 @@
+web: java -DSERVER_PORT=$PORT $JAVA_OPTS -jar build/libs/cartographers-1.0-SNAPSHOT-all.jar

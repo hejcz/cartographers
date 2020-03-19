@@ -80,7 +80,7 @@ class BasicStuffTest {
     @Test
     internal fun `apply shape to board`() {
         val game = (GameImplementation(
-            deck = listOf(TreeFortress14, Ruins),
+            deck = listOf(TreeFortress14, Ruins05),
             monstersDeck = emptyList(),
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
@@ -109,7 +109,7 @@ class BasicStuffTest {
     @Test
     internal fun `apply shape with different terrain to board`() {
         val game = (GameImplementation(
-            deck = listOf(TreeFortress14, Ruins),
+            deck = listOf(TreeFortress14, Ruins05),
             monstersDeck = emptyList(),
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
@@ -155,7 +155,7 @@ class BasicStuffTest {
     @Test
     internal fun `can't add shape on another shape`() {
         val game = (GameImplementation(
-            deck = listOf(BigRiver07, ForgottenForest10, Ruins),
+            deck = listOf(BigRiver07, ForgottenForest10, Ruins05),
             monstersDeck = emptyList(),
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
@@ -207,7 +207,7 @@ class BasicStuffTest {
     @Test
     internal fun `ruins flow`() {
         val game = (GameImplementation(
-            deck = listOf(Ruins, BigRiver07, ForgottenForest10, City09),
+            deck = listOf(Ruins06, BigRiver07, ForgottenForest10, City09),
             monstersDeck = emptyList(),
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
