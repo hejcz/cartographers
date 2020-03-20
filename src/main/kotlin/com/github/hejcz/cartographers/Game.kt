@@ -69,10 +69,11 @@ class GameImplementation(
     private var currentCardIndex: Int = 0
     private var pointsInRound: Int = 0
     private var players: List<Player> = emptyList()
-    private var playersDone: Int = 0
     private var ruinsDrawn: Boolean = false
     private var monsterDrawn: Boolean = false
+    private val playersDone: MutableSet<String> = mutableSetOf()
     lateinit var recentEvents: Events
+    private var gameEnded: Boolean = false
 
     private fun cleanBeforeNextTurn() {
         val monsterCard = monstersDeck.random()
@@ -80,7 +81,7 @@ class GameImplementation(
         deck = shuffler(deck + monsterCard)
         currentCardIndex = 0
         pointsInRound = 0
-        playersDone = 0
+        playersDone.clear()
         ruinsDrawn = false
         monsterDrawn = false
         season = season.next()
@@ -96,12 +97,20 @@ class GameImplementation(
     private fun cleanBeforeNextCard() {
         pointsInRound += deck[currentCardIndex].points()
         currentCardIndex += 1
-        playersDone = 0
+        playersDone.clear()
         ruinsDrawn = false
         monsterDrawn = false
     }
 
     private fun update(nick: String, shape: Shape, terrain: Terrain) {
+        if (nick in playersDone) {
+            recentEvents.add(nick, ErrorEvent("already drawn"))
+            return
+        }
+        if (gameEnded) {
+            recentEvents.add(nick, ErrorEvent("game ended"))
+            return
+        }
         recentEvents.clear()
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
@@ -131,9 +140,9 @@ class GameImplementation(
         if (currentCard.givesCoin(shape)) {
             player.coins++
         }
-        ++playersDone
+        playersDone.add(nick)
         recentEvents.add(nick, AcceptedShape(terrain, shape.toXYPoints().map { (x, y) -> Point(x, y) }))
-        if (players.size == playersDone) {
+        if (players.size == playersDone.size) {
             if (season.pointsInRound <= pointsInRound) {
                 if (season == Season.WINTER) {
                     endGame()
@@ -142,13 +151,14 @@ class GameImplementation(
                 cleanBeforeNextTurn()
                 onNextCard()
                 recentEvents.addAll(
-                    NewCardEvent(deck[currentCardIndex].number()),
+                    NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn),
                     ScoresEvent(players.map { it.nick to it.summaries.last().sum() }.toMap())
                 )
             } else {
                 cleanBeforeNextCard()
+                onNextCard()
                 recentEvents.addAll(
-                    NewCardEvent(deck[currentCardIndex].number())
+                    NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn)
                 )
             }
         }
@@ -182,6 +192,7 @@ class GameImplementation(
         val idToTotalScore =
             players.map { it.nick to it.summaries.sumBy(RoundSummary::sum) }.toMap()
         recentEvents.addAll(ScoresEvent(idToTotalScore))
+        gameEnded = true
     }
 
     override fun join(nick: String): Game {
@@ -191,8 +202,8 @@ class GameImplementation(
 
     override fun start(): Game {
         recentEvents = InMemoryEvents(players.map { it.nick })
-        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number()))
         onNextCard()
+        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn))
         return this
     }
 

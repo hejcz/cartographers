@@ -1,27 +1,35 @@
-//const ws = new WebSocket("ws://localhost:8080/api");
-//ws.onopen = function() {
-//    ws.send(JSON.stringify({"type": "join", "data": { "nick": "julian", "gid": "game1" }}));
-//};
-//ws.onmessage = function(event) {
-//    console.log(event);
-//    const events = JSON.parse(event.data);
-//    for (const event of events) {
-//        if (event["type"] === "ACCEPTED_SHAPE") {
-//            const {
-//                points,
-//                terrain
-//            } = event;
-//            points.filter(it => {
-//                const match = board.find(cell => cell.x === it.x && cell.y === it.y);
-//                if (match) {
-//                    match.terrain = terrain;
-//                    match.locked = true;
-//                }
-//            });
-//            drawBoard();
-//        }
-//    }
-//};
+const points = new Set();
+const selectedRuins = new Set();
+
+const ws = new WebSocket("ws://localhost:8080/api");
+ws.onopen = function() {
+    ws.send(JSON.stringify({"type": "join", "data": { "nick": "julian" + Math.random(), "gid": "game1" }}));
+};
+ws.onmessage = function(event) {
+    console.log(event);
+    const events = JSON.parse(event.data);
+    console.log(events);
+    for (const event of events) {
+        if (event["type"] === "ACCEPTED_SHAPE") {
+            const { points: pts, terrain } = event;
+            pts.filter(it => {
+                const match = board.find(cell => cell.x === it.x && cell.y === it.y);
+                if (match) {
+                    match.terrain = terrain;
+                    match.locked = true;
+                }
+            });
+            points.clear();
+            selectedRuins.clear();
+            drawBoard();
+        }
+        if (event["type"] === "NEW_CARD") {
+            const { card } = event;
+            updateCard(cards[card]);
+            updateTerrains(cards[card].terrains);
+        }
+    }
+};
 
 const rootSvg = d3.select("#game")
 rootSvg.append("svg")
@@ -64,27 +72,33 @@ for (const cell of board) {
 }
 
 let currentTerrain = "FOREST";
-const points = new Set();
-const selectedRuins = new Set();
 
-rootSvg.select("#terrain").selectAll("rect")
-    .data(["FOREST", "CITY", "PLAINS", "WATER", "MONSTER"])
-    .enter()
-    .append("rect")
-    .attr("width", 30)
-    .attr("height", 30)
-    .attr("transform", function (d, i) { return `translate(${i * 35} 0)`; })
-    .style("stroke-width", "1px")
-    .style("stroke", "black")
-    .style("fill", function (d) { return `rgb(${colorByType[d]})` })
-    .on("click", function (d) {
-        currentTerrain = d;
-        [...points].filter(it => !it.locked).forEach(it => { it.type = "EMPTY"; });
-        points.clear();
-        [...selectedRuins].filter(it => !it.locked).forEach(it => { it.type = "RUINS"; });
-        selectedRuins.clear();
-        drawBoard();
-     });
+function updateTerrains(terrains) {
+        const terrainUpdate = d3.select("#current-card .terrain")
+            .selectAll("rect")
+            .data(terrains);
+
+        const terrainEnter = terrainUpdate.enter()
+            .append("rect")
+            .attr("width", 30)
+            .attr("height", 30)
+            .style("stroke-width", "1px")
+            .style("stroke", "black");
+
+        terrainUpdate.merge(terrainEnter)
+            .attr("transform", function (d, i) { return `translate(${i * 35} 0)`; })
+            .style("fill", function (d) { return `rgb(${colorByType[d]})` })
+            .on("click", function (d) {
+               currentTerrain = d;
+               [...points].filter(it => !it.locked).forEach(it => { it.type = "EMPTY"; });
+               points.clear();
+               [...selectedRuins].filter(it => !it.locked).forEach(it => { it.type = "RUINS"; });
+               selectedRuins.clear();
+               drawBoard();
+            });
+
+        terrainUpdate.exit().remove();
+}
 
 d3.select("#submit")
     .on("click", function (event) {

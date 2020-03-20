@@ -43,7 +43,7 @@ interface Event {
 data class AcceptedShape(val terrain: Terrain, val points: Collection<Point>,
                          override val type: EventType = EventType.ACCEPTED_SHAPE) : Event
 
-data class NewCardEvent(val card: String, override val type: EventType = EventType.NEW_CARD) : Event
+data class NewCardEvent(val card: String, val ruins: Boolean, override val type: EventType = EventType.NEW_CARD) : Event
 
 data class ScoresEvent(val scores: Map<String, Int>, override val type: EventType = EventType.SCORE) : Event
 

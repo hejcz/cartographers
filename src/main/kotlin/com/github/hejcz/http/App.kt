@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.hejcz.cartographers.Game
-import com.github.hejcz.cartographers.GameImplementation
-import com.github.hejcz.cartographers.Point
-import com.github.hejcz.cartographers.Terrain
+import com.github.hejcz.cartographers.*
 import io.ktor.application.install
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.http.cio.websocket.readText
@@ -136,15 +133,18 @@ fun main() {
                                                     gameIdToGame[gid]?.draw(nick, coords, terrain)?.let {
                                                         gameIdToGame[gid] = it
                                                         runBlocking {
-                                                            outgoing.send(
-                                                                Frame.Text(
-                                                                    mapper.writeValueAsString(
-                                                                        it.recentEvents(
-                                                                            nick
-                                                                        )
-                                                                    )
-                                                                )
-                                                            )
+                                                            val events = it.recentEvents(nick)
+                                                            events.find { evt -> evt is NewCardEvent }
+                                                                ?.let { evt -> wsToGameId.filterValues { gameId -> gameId == gid }
+                                                                    .forEach { (channel, _) -> channel.send(Frame.Text(mapper.writeValueAsString(
+                                                                        listOf(evt)))) } }
+
+                                                            events.filter { evt -> evt !is NewCardEvent }
+                                                                .let { events ->
+                                                                    if (events.isNotEmpty()) {
+                                                                        outgoing.send(Frame.Text(mapper.writeValueAsString(events)))
+                                                                    }
+                                                                }
                                                         }
                                                     }
                                                 }
@@ -165,10 +165,10 @@ fun main() {
 }
 
 private suspend fun DefaultWebSocketServerSession.sendError(error: String) {
-    outgoing.send(Frame.Text("""{"type": "error", "errors": [$error]}"""))
+    outgoing.send(Frame.Text("""[{"type": "error", "error": "$error"}]"""))
 }
 
 private suspend fun DefaultWebSocketServerSession.sendEvent(type: String) {
-    outgoing.send(Frame.Text("""{"type": "$type"}"""))
+    outgoing.send(Frame.Text("""[{"type": "$type"}]"""))
 }
 
