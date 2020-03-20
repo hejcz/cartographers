@@ -12,7 +12,6 @@ import io.ktor.application.install
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.http.cio.websocket.readText
 import io.ktor.http.content.*
-import io.ktor.routing.route
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -89,11 +88,11 @@ fun main() {
                                                             withGameLock(gameId) {
                                                                 gameIdToGame[gameId]?.join(nick)
                                                             }
-                                                            sendEvent("you joined game $gid")
+                                                            sendEvent("JOIN_SUCCESS")
                                                         } else {
                                                             gameIdToGame[gameId] = GameImplementation().join(nick)
                                                             gameUpdateLocks[gameId] = ReentrantLock()
-                                                            sendEvent("you created and joined game $gid")
+                                                            sendEvent("CREATE_SUCCESS")
                                                         }
                                                     }
                                                 }
@@ -123,14 +122,14 @@ fun main() {
                                                     }
                                                 }
                                             }
-                                        } ?: kotlin.run { outgoing.send(Frame.Text("no game found")) }
+                                        } ?: kotlin.run { sendError("game not found") }
                                     }
                                     "draw" -> {
                                         val (points, terrain) = mapper.readValue<DrawData>(command.data.toString())
                                         val coords = points.map { it.x to it.y }.toSet()
                                         val nick = wsToNickname[outgoing]
                                         if (nick == null) {
-                                            outgoing.send(Frame.Text("no game found"))
+                                            sendError("game not found")
                                         } else {
                                             wsToGameId[outgoing]?.let { gid ->
                                                 withGameLock(gid) {
@@ -149,8 +148,7 @@ fun main() {
                                                         }
                                                     }
                                                 }
-                                                outgoing.send(Frame.Text("you drew a shape"))
-                                            } ?: kotlin.run { outgoing.send(Frame.Text("no game found")) }
+                                            } ?: kotlin.run { sendError("no game found") }
                                         }
                                     }
                                     else -> throw RuntimeException("unknown command ${command.type}")
@@ -167,10 +165,10 @@ fun main() {
 }
 
 private suspend fun DefaultWebSocketServerSession.sendError(error: String) {
-    outgoing.send(Frame.Text("""{"errors": [$error]}"""))
+    outgoing.send(Frame.Text("""{"type": "error", "errors": [$error]}"""))
 }
 
-private suspend fun DefaultWebSocketServerSession.sendEvent(event: String) {
-    outgoing.send(Frame.Text("""{"events": [$event]}"""))
+private suspend fun DefaultWebSocketServerSession.sendEvent(type: String) {
+    outgoing.send(Frame.Text("""{"type": "$type"}"""))
 }
 
