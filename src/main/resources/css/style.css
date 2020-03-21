@@ -18,5 +18,8 @@ body {
 
 svg {
     display: block;
+}
+
+#current-card {
     margin-top: 20px;
 }

@@ -1,6 +1,5 @@
 package com.github.hejcz.cartographers
 
-import com.github.hejcz.http.Nick
 import java.util.*
 
 data class RoundSummary(
@@ -49,12 +48,14 @@ private fun monsters(): Set<MonsterCard> =
     setOf(GoblinsAttack01, BogeymanAssault02, CoboldsCharge03, GnollsInvasion04)
 
 private fun randomScoreCards(): List<ScoreCard> =
-    listOf(
-        setOf(ForestGuard26, Coppice27, ForestTower28, MountainWoods29).random(),
-        setOf(Colony34, HugeCity35, FertilePlain36, Fortress37).random(),
-        setOf(FieldPuddle30, MagesValley31, GoldenBreadbasket32, VastEnbankment33).random(),
-        setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random()
-    )
+    listOf(GoldenBreadbasket32, ForestTower28, HugeCity35, TradingRoad40)
+// TODO unit test other score cards
+//    listOf(
+//        setOf(ForestGuard26, Coppice27, ForestTower28, MountainWoods29).random(),
+//        setOf(Colony34, HugeCity35, FertilePlain36, Fortress37).random(),
+//        setOf(FieldPuddle30, MagesValley31, GoldenBreadbasket32, VastEnbankment33).random(),
+//        setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random()
+//    )
 
 class GameImplementation(
     private val gameId: String = UUID.randomUUID().toString(),
@@ -83,6 +84,7 @@ class GameImplementation(
     }
 
     override fun start(nick: String): Game {
+        println(scoreCards)
         if (started) {
             recentEvents.add(nick, ErrorEvent("ALREADY_STARTED"))
             return this
@@ -114,7 +116,6 @@ class GameImplementation(
         playersDone.clear()
         ruinsDrawn = false
         monsterDrawn = false
-        season = season.next()
         val quest1 = scoreCards.getValue(season)
         val quest2 = scoreCards.getValue(season.next())
         players.forEach {
@@ -122,6 +123,7 @@ class GameImplementation(
                 quest1.evaluate(it.board), quest2.evaluate(it.board), it.coins, it.board.countMonsterPoints()
             )
         }
+        season = season.next()
     }
 
     private fun cleanBeforeNextCard() {
@@ -144,9 +146,8 @@ class GameImplementation(
         recentEvents.clear()
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
-        if (!currentCard.isValid(shape)
-            && !(shape.size() == 1 && player.board.noPlaceToDraw(shape.createAllVariations()))
-        ) {
+        val isOneOnOneSpecialCase = shape.size() == 1 && player.board.noPlaceToDraw(shape.createAllVariations())
+        if (!currentCard.isValid(shape) && !isOneOnOneSpecialCase) {
             recentEvents.add(nick, ErrorEvent("invalid shape"))
             return
         }
@@ -162,7 +163,8 @@ class GameImplementation(
             recentEvents.add(nick, ErrorEvent("shape on taken point"))
             return
         }
-        if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }) {
+        if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }
+            && player.board.areSomeRuinsEmpty()) {
             recentEvents.add(nick, ErrorEvent("shape must be on ruins"))
             return
         }

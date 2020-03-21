@@ -85,7 +85,7 @@ class BasicStuffTest {
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
-            .start()
+            .start("julian")
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.FOREST)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
@@ -114,7 +114,7 @@ class BasicStuffTest {
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
-            .start()
+            .start("julian")
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.CITY)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
@@ -143,7 +143,7 @@ class BasicStuffTest {
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
-            .start()
+            .start("julian")
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.WATER)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
@@ -160,7 +160,7 @@ class BasicStuffTest {
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
-            .start()
+            .start("julian")
             .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -7 to 8), Terrain.WATER)
         val board1 = game.boardOf("julian")
         Assertions.assertEquals(
@@ -212,7 +212,7 @@ class BasicStuffTest {
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
             .join("julian")
-            .start()
+            .start("julian")
         Assertions.assertNotEquals(
             game.draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7), Terrain.WATER).boardOf("julian").toString(),
             """
@@ -265,5 +265,10 @@ class BasicStuffTest {
             game1.draw("julian", setOf(-1 to 0, 0 to 1), Terrain.FOREST).boardOf("julian").toString(),
             "next shape does not need to be on ruins"
         )
+    }
+
+    @Test
+    internal fun `ruins is not enforced when none is left`() {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }

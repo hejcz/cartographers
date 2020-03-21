@@ -1,6 +1,7 @@
 package com.github.hejcz.http
 
 import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -19,10 +20,11 @@ import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.runBlocking
+import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
-data class Command(val type: String, val data: JsonParser)
+data class Command(val type: String, val data: JsonNode)
 data class JoinGameData(val nick: String, val gid: String)
 data class DrawData(val points: Array<Point>, val terrain: Terrain)
 
@@ -65,7 +67,7 @@ class App {
         private suspend fun DefaultWebSocketServerSession.handle(command: Command) {
             when (command.type) {
                 "join" -> {
-                    val (nick, gid) = mapper.readValue<JoinGameData>(command.data)
+                    val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
                     if (wsToInfo[outgoing] != null) {
                         sendError("ALREADY_IN_GAME")
                     }
@@ -73,6 +75,8 @@ class App {
                     if (room != null) {
                         // TODO
                         room.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                        wsToInfo[outgoing] = PlayerInfo(nick, room)
+                        sendEvent("JOIN_SUCCESS")
                         return
                     }
                     newGameLock.lock()
@@ -81,6 +85,7 @@ class App {
                         newGameLock.unlock()
                         // TODO
                         roomAfterLock.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                        wsToInfo[outgoing] = PlayerInfo(nick, roomAfterLock)
                         sendEvent("JOIN_SUCCESS")
                         return
                     }

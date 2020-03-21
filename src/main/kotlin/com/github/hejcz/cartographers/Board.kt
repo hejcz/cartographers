@@ -15,6 +15,7 @@ interface Board {
     fun adjacent(xy: Pair<Int, Int>): Set<Pair<Int, Int>>
     fun hasRuinsOn(x: Int, y: Int): Boolean
     fun noPlaceToDraw(shapes: Set<Shape>): Boolean
+    fun areSomeRuinsEmpty(): Boolean
 
     companion object {
         fun create(): Board =
@@ -147,13 +148,7 @@ class MapBoard(private val board: Map<Point, Terrain>) :
             .map { it.x to it.y }
             .toSet()
 
-    override fun hasRuinsOn(x: Int, y: Int): Boolean =
-        x == -1 && y == 5
-                || x == -2 && y == 1
-                || x == -2 && y == 9
-                || x == -8 && y == 1
-                || x == -8 && y == 9
-                || x == -9 && y == 5
+    override fun hasRuinsOn(x: Int, y: Int): Boolean = Point(x, y) in ruins
 
     override fun noPlaceToDraw(shapes: Set<Shape>): Boolean = shapes.none { shape ->
         val maxX = shape.toXYPoints().maxBy { it.first }?.first ?: throw RuntimeException("Empty shape")
@@ -172,6 +167,8 @@ class MapBoard(private val board: Map<Point, Terrain>) :
         false
     }
 
+    override fun areSomeRuinsEmpty(): Boolean = ruins.any { terrainAt(it) == Terrain.EMPTY }
+
     private fun terrainAt(p: Point): Terrain = when {
         p.x > 0 || p.x < -10 || p.y < 0 || p.y > 10 -> Terrain.OUTSIDE_THE_MAP
         else -> board.getValue(p)
@@ -183,6 +180,17 @@ class MapBoard(private val board: Map<Point, Terrain>) :
                 this.terrainAt(x, y).toString()
             }
         } + "\n"
+
+    companion object {
+        val ruins = setOf(
+            Point(-1, 5),
+            Point(-2, 1),
+            Point(-2, 9),
+            Point(-8, 1),
+            Point(-8, 9),
+            Point(-9, 5)
+        )
+    }
 }
 
 data class Point(val x: Int, val y: Int) {

@@ -186,7 +186,6 @@ function drawCoins() {
 
 function drawBoard() {
     const cells = rootSvg.select("#board")
-        .attr("transform", function (d) { return `translate(0 45)`; })
         .selectAll("rect")
         .data(board);
 

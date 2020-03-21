@@ -15,7 +15,6 @@ class Room(gid: String) {
     private val callbacks: MutableMap<Nick, (Set<Event>) -> Unit> = mutableMapOf()
 
     fun join(nick: Nick, sendToSingle: (Set<Event>) -> Unit) {
-        lock.lock()
         synchronized(lock) {
             if (nick in callbacks) {
                 sendToSingle(setOf(ErrorEvent("NICK_TAKEN")))
@@ -29,7 +28,7 @@ class Room(gid: String) {
     fun start(nick: Nick) {
         synchronized(lock) {
             game = game.start(nick.nick)
-            (callbacks.getValue(nick))(game.recentEvents(nick.nick))
+            handleEvents(nick)
         }
     }
 
@@ -37,14 +36,18 @@ class Room(gid: String) {
         val xyPoints = data.points.map { it.x to it.y }.toSet()
         synchronized(lock) {
             game = game.draw(nick.nick, xyPoints, data.terrain)
-            val events = game.recentEvents(nick.nick)
-            val (newCardEvents, otherEvents) = events.partition { it is NewCardEvent }
-            if (newCardEvents.isNotEmpty()) {
-                callbacks.forEach { it.value(newCardEvents.toSet()) }
-            }
-            if (otherEvents.isNotEmpty()) {
-                (callbacks.getValue(nick))(newCardEvents.toSet())
-            }
+            handleEvents(nick)
+        }
+    }
+
+    private fun handleEvents(nick: Nick) {
+        val events = game.recentEvents(nick.nick)
+        val (newCardEvents, otherEvents) = events.partition { it is NewCardEvent }
+        if (newCardEvents.isNotEmpty()) {
+            callbacks.forEach { it.value(newCardEvents.toSet()) }
+        }
+        if (otherEvents.isNotEmpty()) {
+            (callbacks.getValue(nick))(otherEvents.toSet())
         }
     }
 }
