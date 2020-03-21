@@ -6,7 +6,10 @@ const emptyArray = [];
 const scores = [emptyArray, emptyArray, emptyArray, emptyArray];
 const nick = "julian" + Math.random();
 
-const ws = new WebSocket("ws://localhost:8080/api");
+const host = window.location.hostname;
+const port = window.location.port;
+
+const ws = new WebSocket(`wss://${host}${port === "" ? "" : ":" + port}/api`);
 ws.onopen = function () {
     ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": "game1" } }));
 };

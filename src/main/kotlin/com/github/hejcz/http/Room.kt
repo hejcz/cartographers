@@ -44,9 +44,9 @@ class Room(gid: String) {
 
     private fun handleEvents(nick: Nick) {
         val events = game.recentEvents(nick.nick)
-        val (newCardEvents, otherEvents) = events.partition { it is NewCardEvent }
-        if (newCardEvents.isNotEmpty()) {
-            callbacks.forEach { it.value(newCardEvents.toSet()) }
+        val (allPlayersEvents, otherEvents) = events.partition { it is NewCardEvent || it is ScoresEvent }
+        if (allPlayersEvents.isNotEmpty()) {
+            callbacks.forEach { it.value(allPlayersEvents.toSet()) }
         }
         if (otherEvents.isNotEmpty()) {
             (callbacks.getValue(nick))(otherEvents.toSet())
