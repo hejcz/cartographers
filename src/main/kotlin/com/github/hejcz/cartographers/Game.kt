@@ -1,5 +1,6 @@
 package com.github.hejcz.cartographers
 
+import com.github.hejcz.http.Nick
 import java.util.*
 
 data class RoundSummary(
@@ -74,6 +75,35 @@ class GameImplementation(
     private val playersDone: MutableSet<String> = mutableSetOf()
     lateinit var recentEvents: Events
     private var gameEnded: Boolean = false
+    private var started: Boolean = false
+
+    override fun join(nick: String): Game {
+        players = players + Player(nick)
+        return this
+    }
+
+    override fun start(nick: String): Game {
+        if (started) {
+            recentEvents.add(nick, ErrorEvent("ALREADY_STARTED"))
+            return this
+        }
+        started = true
+        recentEvents = InMemoryEvents(players.map { it.nick })
+        onNextCard()
+        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn))
+        return this
+    }
+
+    override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game {
+        update(nick, Shape.create(points), terrain)
+        return this
+    }
+
+    private fun player(nick: String) = players.find { it.nick == nick }
+
+    override fun boardOf(nick: String): Board = player(nick)?.board!!
+
+    override fun recentEvents(nick: String): Set<Event> = recentEvents.of(nick)
 
     private fun cleanBeforeNextTurn() {
         val monsterCard = monstersDeck.random()
@@ -194,34 +224,11 @@ class GameImplementation(
         recentEvents.addAll(ScoresEvent(idToTotalScore))
         gameEnded = true
     }
-
-    override fun join(nick: String): Game {
-        players = players + Player(nick)
-        return this
-    }
-
-    override fun start(): Game {
-        recentEvents = InMemoryEvents(players.map { it.nick })
-        onNextCard()
-        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn))
-        return this
-    }
-
-    override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game {
-        update(nick, Shape.create(points), terrain)
-        return this
-    }
-
-    private fun player(nick: String) = players.find { it.nick == nick }
-
-    override fun boardOf(nick: String): Board = player(nick)?.board!!
-
-    override fun recentEvents(nick: String): Set<Event> = recentEvents.of(nick)
 }
 
 interface Game {
     fun join(nick: String): Game
-    fun start(): Game
+    fun start(nick: String): Game
     fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game
     fun boardOf(nick: String): Board
     fun recentEvents(nick: String): Set<Event>

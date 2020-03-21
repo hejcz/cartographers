@@ -1,6 +1,6 @@
 package com.github.hejcz.http
 
-import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -8,7 +8,9 @@ import com.github.hejcz.cartographers.*
 import io.ktor.application.install
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.http.cio.websocket.readText
-import io.ktor.http.content.*
+import io.ktor.http.content.resource
+import io.ktor.http.content.resources
+import io.ktor.http.content.static
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -18,150 +20,98 @@ import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
-data class Command(val type: String, val data: JsonNode)
+data class Command(val type: String, val data: JsonParser)
 data class JoinGameData(val nick: String, val gid: String)
 data class DrawData(val points: Array<Point>, val terrain: Terrain)
 
-inline class GameId(val gid: String)
+data class PlayerInfo(val nick: String, val room: Room)
 
-fun main() {
-    val mapper = ObjectMapper().registerModule(KotlinModule())
+class App {
+    companion object {
+        private val mapper = ObjectMapper().registerModule(KotlinModule())
+        private val newGameLock = ReentrantLock()
+        private val wsToInfo = ConcurrentHashMap<SendChannel<Frame>, PlayerInfo>()
+        private val gidToRoom = ConcurrentHashMap<String, Room>()
 
-    val newGameLock = ReentrantLock()
-    val gameIdToGame = ConcurrentHashMap<GameId, Game>()
-    val gameUpdateLocks = ConcurrentHashMap<GameId, Lock>()
-    val wsToGameId = ConcurrentHashMap<SendChannel<Frame>, GameId>()
-    val wsToNickname = ConcurrentHashMap<SendChannel<Frame>, String>()
-
-    fun withGameCreationLock(action: () -> Unit) {
-        try {
-            newGameLock.lock()
-            action()
-        } finally {
-            newGameLock.unlock()
-        }
-    }
-
-    fun withGameLock(gid: GameId, action: () -> Unit) {
-        try {
-            gameUpdateLocks[gid]?.lock()
-            action()
-        } finally {
-            gameUpdateLocks[gid]?.unlock()
-        }
-    }
-
-    embeddedServer(Netty, System.getProperty("SERVER_PORT", "8080").toInt()) {
-        install(WebSockets)
-        routing {
-            static("game") {
-                resources("css")
-                resources("js")
-                resource("index.html")
-            }
-            webSocket("/api") {
-                for (frame in incoming) {
-                    try {
-                        when (frame) {
-                            is Frame.Text -> {
-                                val command = mapper.readValue<Command>(frame.readText())
-                                when (command.type) {
-                                    "join" -> {
-                                        withGameCreationLock {
-                                            runBlocking {
-                                                val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
-                                                val currentGameId = wsToGameId[outgoing]
-                                                when {
-                                                    currentGameId != null -> sendError("You are already in game ${currentGameId.gid}")
-                                                    else -> {
-                                                        val gameId = GameId(gid)
-                                                        val existingGame = gameIdToGame[gameId]
-                                                        wsToGameId[outgoing] = gameId
-                                                        wsToNickname[outgoing] = nick
-                                                        if (existingGame != null) {
-                                                            withGameLock(gameId) {
-                                                                gameIdToGame[gameId]?.join(nick)
-                                                            }
-                                                            sendEvent("JOIN_SUCCESS")
-                                                        } else {
-                                                            gameIdToGame[gameId] = GameImplementation().join(nick)
-                                                            gameUpdateLocks[gameId] = ReentrantLock()
-                                                            sendEvent("CREATE_SUCCESS")
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    "start" -> {
-                                        wsToGameId[outgoing]?.let { gid ->
-                                            withGameLock(gid) {
-                                                gameIdToGame[gid]?.start()?.let { newGame: Game ->
-                                                    gameIdToGame[gid] = newGame
-                                                    runBlocking {
-                                                        wsToGameId.filterValues { gameId -> gameId == gid }
-                                                            .forEach { (channel, _) ->
-                                                                wsToNickname[channel]?.let { nick ->
-                                                                    channel.send(
-                                                                        Frame.Text(
-                                                                            mapper.writeValueAsString(
-                                                                                newGame.recentEvents(
-                                                                                    nick
-                                                                                )
-                                                                            )
-                                                                        )
-                                                                    )
-                                                                }
-                                                            }
-                                                    }
-                                                }
-                                            }
-                                        } ?: kotlin.run { sendError("game not found") }
-                                    }
-                                    "draw" -> {
-                                        val (points, terrain) = mapper.readValue<DrawData>(command.data.toString())
-                                        val coords = points.map { it.x to it.y }.toSet()
-                                        val nick = wsToNickname[outgoing]
-                                        if (nick == null) {
-                                            sendError("game not found")
-                                        } else {
-                                            wsToGameId[outgoing]?.let { gid ->
-                                                withGameLock(gid) {
-                                                    gameIdToGame[gid]?.draw(nick, coords, terrain)?.let {
-                                                        gameIdToGame[gid] = it
-                                                        runBlocking {
-                                                            val events = it.recentEvents(nick)
-                                                            events.find { evt -> evt is NewCardEvent }
-                                                                ?.let { evt -> wsToGameId.filterValues { gameId -> gameId == gid }
-                                                                    .forEach { (channel, _) -> channel.send(Frame.Text(mapper.writeValueAsString(
-                                                                        listOf(evt)))) } }
-
-                                                            events.filter { evt -> evt !is NewCardEvent }
-                                                                .let { events ->
-                                                                    if (events.isNotEmpty()) {
-                                                                        outgoing.send(Frame.Text(mapper.writeValueAsString(events)))
-                                                                    }
-                                                                }
-                                                        }
-                                                    }
-                                                }
-                                            } ?: kotlin.run { sendError("no game found") }
-                                        }
-                                    }
-                                    else -> throw RuntimeException("unknown command ${command.type}")
+        @JvmStatic
+        fun main(args: Array<String>) {
+            embeddedServer(Netty, System.getProperty("SERVER_PORT", "8080").toInt()) {
+                install(WebSockets)
+                routing {
+                    static("game") {
+                        resources("css")
+                        resources("js")
+                        resource("index.html")
+                    }
+                    webSocket("/api") {
+                        for (frame in incoming) {
+                            try {
+                                when (frame) {
+                                    is Frame.Text -> handle(mapper.readValue(frame.readText()))
                                 }
+                            } catch (ex: Throwable) {
+                                ex.printStackTrace()
+                                throw ex
                             }
                         }
-                    } catch (ex: Throwable) {
-                        ex.printStackTrace()
                     }
+                }
+            }.start(wait = true)
+
+        }
+
+        private suspend fun DefaultWebSocketServerSession.handle(command: Command) {
+            when (command.type) {
+                "join" -> {
+                    val (nick, gid) = mapper.readValue<JoinGameData>(command.data)
+                    if (wsToInfo[outgoing] != null) {
+                        sendError("ALREADY_IN_GAME")
+                    }
+                    val room = gidToRoom[gid]
+                    if (room != null) {
+                        // TODO
+                        room.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                        return
+                    }
+                    newGameLock.lock()
+                    val roomAfterLock = gidToRoom[gid]
+                    if (roomAfterLock != null) {
+                        newGameLock.unlock()
+                        // TODO
+                        roomAfterLock.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                        sendEvent("JOIN_SUCCESS")
+                        return
+                    }
+                    val newRoom = Room(gid)
+                    // TODO
+                    newRoom.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                    gidToRoom[gid] = newRoom
+                    newGameLock.unlock()
+                    wsToInfo[outgoing] = PlayerInfo(nick, newRoom)
+                    sendEvent("CREATE_SUCCESS")
+                }
+                "start" -> {
+                    val info = wsToInfo[outgoing]
+                    if (info == null) {
+                        sendError("game not found")
+                        return
+                    }
+                    info.room.start(Nick(info.nick))
+                }
+                "draw" -> {
+                    val info = wsToInfo[outgoing]
+                    if (info == null) {
+                        sendError("game not found")
+                        return
+                    }
+                    info.room.draw(Nick(info.nick), mapper.readValue(command.data.toString()))
                 }
             }
         }
-    }.start(wait = true)
+    }
+
 }
 
 private suspend fun DefaultWebSocketServerSession.sendError(error: String) {
