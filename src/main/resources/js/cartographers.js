@@ -51,11 +51,7 @@ ws.onmessage = function (event) {
 
 const rootSvg = d3.select("#game")
 rootSvg.append("svg")
-    .attr("id", "terrain");
-rootSvg.append("svg")
     .attr("id", "board");
-rootSvg.append("svg")
-    .attr("id", "buttons");
 
 d3.select("#start")
     .on("click", function () { ws.send(JSON.stringify({ "type": "start" })) });
@@ -125,10 +121,7 @@ d3.select("#submit")
         ws.send(JSON.stringify(msg));
     });
 
-rootSvg.select("#board")
-    .append("svg")
-    .attr("id", "points")
-    .attr("transform", function (d) { return `translate(0 620)`; })
+d3.select("#points")
     .attr("width", 600)
     .attr("height", 200);
 
