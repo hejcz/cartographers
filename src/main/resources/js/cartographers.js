@@ -9,7 +9,8 @@ const nick = "julian" + Math.random();
 const host = window.location.hostname;
 const port = window.location.port;
 
-const ws = new WebSocket(`wss://${host}${port === "" ? "" : ":" + port}/api`);
+const ws = new WebSocket(
+    host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
 ws.onopen = function () {
     ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": "game1" } }));
 };
@@ -42,7 +43,7 @@ ws.onmessage = function (event) {
         if (event["type"] === "SCORE") {
             const { quest1, quest2, coins, monsters } = event.scores[nick];
             const idx = scores.indexOf(emptyArray);
-            scores[idx] = [quest1, quest2, coins, -monsters];
+            scores[idx] = [quest1, quest2, coins, -monsters, quest1 + quest2 + coins - monsters];
             drawPoints();
         }
     }
@@ -58,6 +59,9 @@ rootSvg.append("svg")
 
 d3.select("#start")
     .on("click", function () { ws.send(JSON.stringify({ "type": "start" })) });
+
+d3.select("#leave")
+    .on("click", function () { ws.send(JSON.stringify({ "type": "leave" })) });
 
 const board = []
 for (let x = 0; x <= 10; x++) {
@@ -185,10 +189,20 @@ function drawPoints() {
         .attr("y", "20");
     scoreUpdate.merge(scoreEnter)
         .attr("transform", function (d, i) {
-            const x = i === 0 || i === 1 ? 0 : -1;
-            const y = i === 0 || i === 2 ? 0 : 1;
-
-            const l = (d + '').length;
+            let x = 0;
+            if (i === 2 || i == 3) {
+                x = -1;
+            }
+            if (i === 4) {
+                x = -2;
+            }
+            let y = 0;
+            if (i === 1 || i == 3) {
+                y = 1;
+            }
+            if (i === 4) {
+                y = 0.5;
+            }
 
             return `translate(${y * (w) / 2} ${w/6 + -x * (w) / 2})`;
         })

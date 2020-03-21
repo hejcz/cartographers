@@ -1,11 +1,11 @@
 package com.github.hejcz.http
 
-import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.github.hejcz.cartographers.*
+import com.github.hejcz.cartographers.Point
+import com.github.hejcz.cartographers.Terrain
 import io.ktor.application.install
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.http.cio.websocket.readText
@@ -20,7 +20,6 @@ import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.runBlocking
-import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
@@ -55,7 +54,6 @@ class App {
                                 }
                             } catch (ex: Throwable) {
                                 ex.printStackTrace()
-                                throw ex
                             }
                         }
                     }
@@ -66,6 +64,17 @@ class App {
 
         private suspend fun DefaultWebSocketServerSession.handle(command: Command) {
             when (command.type) {
+                "leave" -> {
+                    val info = wsToInfo[outgoing]
+                    if (info == null) {
+                        sendError("game not found")
+                        return
+                    }
+                    newGameLock.lock()
+                    wsToInfo.filterValues { it.room == info.room }.onEach { wsToInfo.remove(it.key) }
+                    gidToRoom.filterValues { it == info.room }.onEach { gidToRoom.remove(it.key) }
+                    newGameLock.unlock()
+                }
                 "join" -> {
                     val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
                     if (wsToInfo[outgoing] != null) {

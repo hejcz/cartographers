@@ -179,6 +179,7 @@ class GameImplementation(
         if (players.size == playersDone.size) {
             if (season.pointsInRound <= pointsInRound) {
                 if (season == Season.WINTER) {
+                    calculateScore()
                     endGame()
                     return
                 }
@@ -237,9 +238,11 @@ class GameImplementation(
     }
 
     private fun endGame() {
-        val idToTotalScore =
-            players.map { it.nick to it.summaries.sumBy(RoundSummary::sum) }.toMap()
-        recentEvents.addAll(TotalScore(idToTotalScore))
+        recentEvents.addAll(
+            ScoresEvent(players.map { it.nick to it.summaries.last()
+                .let { s: RoundSummary -> Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty) }
+            }.toMap()),
+            Results(players.maxBy { it.summaries.sumBy(RoundSummary::sum) }?.nick!!))
         gameEnded = true
     }
 

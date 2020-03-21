@@ -4,7 +4,7 @@ enum class EventType {
     ACCEPTED_SHAPE,
     NEW_CARD,
     SCORE,
-    TOTAL_SCORE,
+    RESULTS,
     ERROR
 }
 
@@ -50,6 +50,6 @@ data class Score(val quest1: Int, val quest2: Int, val coins: Int, val monsters:
 
 data class ScoresEvent(val scores: Map<String, Score>, override val type: EventType = EventType.SCORE) : Event
 
-data class TotalScore(val scores: Map<String, Int>, override val type: EventType = EventType.TOTAL_SCORE) : Event
+data class Results(val winner: String, override val type: EventType = EventType.RESULTS) : Event
 
 data class ErrorEvent(val error: String, override val type: EventType = EventType.ERROR) : Event
