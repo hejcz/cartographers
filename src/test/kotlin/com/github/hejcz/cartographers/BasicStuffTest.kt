@@ -80,7 +80,7 @@ class BasicStuffTest {
     @Test
     internal fun `apply shape to board`() {
         val game = (GameImplementation(
-            deck = listOf(TreeFortress14, Ruins05),
+            deck = listOf(TreeFortress14, BigRiver07),
             monstersDeck = emptyList(),
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
@@ -109,7 +109,7 @@ class BasicStuffTest {
     @Test
     internal fun `apply shape with different terrain to board`() {
         val game = (GameImplementation(
-            deck = listOf(TreeFortress14, Ruins05),
+            deck = listOf(TreeFortress14, BigRiver07),
             monstersDeck = emptyList(),
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
@@ -155,7 +155,7 @@ class BasicStuffTest {
     @Test
     internal fun `can't add shape on another shape`() {
         val game = (GameImplementation(
-            deck = listOf(BigRiver07, ForgottenForest10, Ruins05),
+            deck = listOf(BigRiver07, ForgottenForest10, BigRiver07),
             monstersDeck = emptyList(),
             scoreCards = emptyMap()
         ) { cards -> cards } as Game)
@@ -269,6 +269,60 @@ class BasicStuffTest {
 
     @Test
     internal fun `ruins is not enforced when none is left`() {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        // TODO
+    }
+
+    @Test
+    internal fun `can place 1 on 1 on this board`() {
+        val b = Board.create("""
+            [P][P][P][F][F][F][C][C][C][C][C]
+            [P][D][F][M][F][F][C][F][F][C][C]
+            [P][ ][D][F][F][F][F][F][M][P][C]
+            [D][F][D][D][F][ ][D][F][D][C][C]
+            [D][F][D][P][P][ ][D][D][D][C][C]
+            [ ][F][F][P][ ][M][C][C][C][C][C]
+            [ ][ ][ ][P][ ][C][C][ ][C][C][C]
+            [P][P][P][P][W][C][ ][C][C][C][ ]
+            [P][P][M][F][W][C][P][W][W][W][W]
+            [P][ ][ ][F][W][C][P][M][ ][ ][ ]
+            [P][P][F][F][F][C][P][P][P][ ][ ]
+        """.trimIndent())
+        Assertions.assertTrue(b.noPlaceToDraw(Fends15.availableShapes()))
+    }
+
+    @Test
+    internal fun `ruins when are available but shape does not match this point`() {
+        val b = Board.create("""
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][M][ ][P][ ][ ][ ][ ][ ]
+            [ ][P][ ][ ][ ][ ][ ][ ][M][P][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][M][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][F][F][ ]
+            [ ][P][M][ ][ ][ ][ ][ ][F][ ][ ]
+            [ ][ ][ ][ ][ ][P][ ][M][F][F][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            """.trimIndent())
+        Assertions.assertFalse(b.isAnyPossibleContaining(Point(-8, 9), BigRiver07.availableShapes()))
+    }
+
+    @Test
+    internal fun `ruins when are available but shape does not match this point 2`() {
+        val b = Board.create("""
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][M][ ][P][ ][ ][ ][ ][ ]
+            [ ][P][ ][ ][ ][ ][ ][ ][M][P][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][M][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][F][F][ ]
+            [ ][P][M][ ][ ][ ][ ][ ][ ][ ][ ]
+            [ ][ ][ ][ ][ ][P][ ][M][F][F][ ]
+            [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+            """.trimIndent())
+        Assertions.assertTrue(b.isAnyPossibleContaining(Point(-8, 9), BigRiver07.availableShapes()))
     }
 }

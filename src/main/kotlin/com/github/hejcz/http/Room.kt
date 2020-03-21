@@ -36,6 +36,8 @@ class Room(gid: String) {
         val xyPoints = data.points.map { it.x to it.y }.toSet()
         synchronized(lock) {
             game = game.draw(nick.nick, xyPoints, data.terrain)
+            println(game)
+            println(game.boardOf(nick.nick))
             handleEvents(nick)
         }
     }

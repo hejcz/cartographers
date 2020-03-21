@@ -6,6 +6,7 @@ interface Shape {
     fun toXYPoints(): Set<Pair<Int, Int>>
     fun normalize(): Shape
     fun size(): Int
+    fun allVersionsContaining(point: Point): Set<Shape>
 
     companion object {
         fun create(points: Set<Pair<Int, Int>>): Shape =
@@ -51,6 +52,13 @@ data class PointGroupShape(
     override fun normalize(): Shape = moveTopLeftToZeroZero(points)
 
     override fun size(): Int = points.size
+
+    override fun allVersionsContaining(point: Point): Set<Shape> =
+        points.map { (x, y) ->
+            val xShift = point.x - x
+            val yShift = point.y - y
+            PointGroupShape(points.map { (x, y) -> x + xShift to y + yShift }.toSet())
+        }.toSet()
 
     companion object {
         private fun moveTopLeftToZeroZero(positions: Collection<Pair<Int, Int>>): Shape {

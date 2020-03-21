@@ -15,7 +15,8 @@ interface Board {
     fun adjacent(xy: Pair<Int, Int>): Set<Pair<Int, Int>>
     fun hasRuinsOn(x: Int, y: Int): Boolean
     fun noPlaceToDraw(shapes: Set<Shape>): Boolean
-    fun areSomeRuinsEmpty(): Boolean
+    fun anyRuins(predicate: (Int, Int) -> Boolean): Boolean
+    fun isAnyPossibleContaining(point: Point, shapes: Set<Shape>): Boolean
 
     companion object {
         fun create(): Board =
@@ -167,7 +168,22 @@ class MapBoard(private val board: Map<Point, Terrain>) :
         false
     }
 
-    override fun areSomeRuinsEmpty(): Boolean = ruins.any { terrainAt(it) == Terrain.EMPTY }
+    override fun anyRuins(predicate: (Int, Int) -> Boolean): Boolean =
+        ruins.any { (x, y) -> predicate(x, y) }
+
+    override fun isAnyPossibleContaining(point: Point, shapes: Set<Shape>): Boolean {
+        for (s in shapes) {
+            for (v in s.createAllVariations()) {
+                for (version in v.allVersionsContaining(point)) {
+                    val impossible = version.anyMatches { (x, y) -> terrainAt(x, y) != Terrain.EMPTY }
+                    if (!impossible) {
+                        return true
+                    }
+                }
+            }
+        }
+        return false
+    }
 
     private fun terrainAt(p: Point): Terrain = when {
         p.x > 0 || p.x < -10 || p.y < 0 || p.y > 10 -> Terrain.OUTSIDE_THE_MAP

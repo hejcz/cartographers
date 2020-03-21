@@ -4,6 +4,7 @@ enum class EventType {
     ACCEPTED_SHAPE,
     NEW_CARD,
     SCORE,
+    TOTAL_SCORE,
     ERROR
 }
 
@@ -40,11 +41,15 @@ interface Event {
     val type: EventType
 }
 
-data class AcceptedShape(val terrain: Terrain, val points: Collection<Point>,
+data class AcceptedShape(val terrain: Terrain, val points: Collection<Point>, val totalCoins: Int,
                          override val type: EventType = EventType.ACCEPTED_SHAPE) : Event
 
 data class NewCardEvent(val card: String, val ruins: Boolean, override val type: EventType = EventType.NEW_CARD) : Event
 
-data class ScoresEvent(val scores: Map<String, Int>, override val type: EventType = EventType.SCORE) : Event
+data class Score(val quest1: Int, val quest2: Int, val coins: Int, val monsters: Int)
+
+data class ScoresEvent(val scores: Map<String, Score>, override val type: EventType = EventType.SCORE) : Event
+
+data class TotalScore(val scores: Map<String, Int>, override val type: EventType = EventType.TOTAL_SCORE) : Event
 
 data class ErrorEvent(val error: String, override val type: EventType = EventType.ERROR) : Event

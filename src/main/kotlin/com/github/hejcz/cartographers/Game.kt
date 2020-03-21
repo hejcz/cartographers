@@ -71,7 +71,7 @@ class GameImplementation(
     private var currentCardIndex: Int = 0
     private var pointsInRound: Int = 0
     private var players: List<Player> = emptyList()
-    private var ruinsDrawn: Boolean = false
+    private var ruinsPicked: Boolean = false
     private var monsterDrawn: Boolean = false
     private val playersDone: MutableSet<String> = mutableSetOf()
     lateinit var recentEvents: Events
@@ -91,8 +91,9 @@ class GameImplementation(
         }
         started = true
         recentEvents = InMemoryEvents(players.map { it.nick })
+        cleanBeforeNextTurn()
         onNextCard()
-        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn))
+        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number(), ruinsPicked))
         return this
     }
 
@@ -108,29 +109,28 @@ class GameImplementation(
     override fun recentEvents(nick: String): Set<Event> = recentEvents.of(nick)
 
     private fun cleanBeforeNextTurn() {
-        val monsterCard = monstersDeck.random()
-        monstersDeck = monstersDeck - monsterCard
-        deck = shuffler(deck + monsterCard)
+        if (monstersDeck.isNotEmpty()) {
+            val monsterCard = monstersDeck.random()
+            monstersDeck = monstersDeck - monsterCard
+            deck = deck + monsterCard
+        }
+        deck = shuffler(deck)
         currentCardIndex = 0
         pointsInRound = 0
         playersDone.clear()
-        ruinsDrawn = false
+        ruinsPicked = false
         monsterDrawn = false
-        val quest1 = scoreCards.getValue(season)
-        val quest2 = scoreCards.getValue(season.next())
-        players.forEach {
-            it.summaries = it.summaries + RoundSummary(
-                quest1.evaluate(it.board), quest2.evaluate(it.board), it.coins, it.board.countMonsterPoints()
-            )
-        }
-        season = season.next()
     }
 
     private fun cleanBeforeNextCard() {
         pointsInRound += deck[currentCardIndex].points()
-        currentCardIndex += 1
+        if (deck[currentCardIndex] is MonsterCard) {
+            deck = deck - deck[currentCardIndex]
+        } else {
+            currentCardIndex += 1
+        }
         playersDone.clear()
-        ruinsDrawn = false
+        ruinsPicked = false
         monsterDrawn = false
     }
 
@@ -146,7 +146,7 @@ class GameImplementation(
         recentEvents.clear()
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
-        val isOneOnOneSpecialCase = shape.size() == 1 && player.board.noPlaceToDraw(shape.createAllVariations())
+        val isOneOnOneSpecialCase = shape.size() == 1 && player.board.noPlaceToDraw(currentCard.availableShapes())
         if (!currentCard.isValid(shape) && !isOneOnOneSpecialCase) {
             recentEvents.add(nick, ErrorEvent("invalid shape"))
             return
@@ -163,8 +163,10 @@ class GameImplementation(
             recentEvents.add(nick, ErrorEvent("shape on taken point"))
             return
         }
-        if (ruinsDrawn && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }
-            && player.board.areSomeRuinsEmpty()) {
+        if (ruinsPicked && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }
+            && player.board.anyRuins { x, y -> player.board.terrainAt(x, y) == Terrain.EMPTY
+                    && player.board.isAnyPossibleContaining(Point(x, y), currentCard.availableShapes()) }) {
+            // corner case - some ruins are free but shape cant be drawn on them
             recentEvents.add(nick, ErrorEvent("shape must be on ruins"))
             return
         }
@@ -173,7 +175,7 @@ class GameImplementation(
             player.coins++
         }
         playersDone.add(nick)
-        recentEvents.add(nick, AcceptedShape(terrain, shape.toXYPoints().map { (x, y) -> Point(x, y) }))
+        recentEvents.add(nick, AcceptedShape(terrain, shape.toXYPoints().map { (x, y) -> Point(x, y) }, player.coins))
         if (players.size == playersDone.size) {
             if (season.pointsInRound <= pointsInRound) {
                 if (season == Season.WINTER) {
@@ -181,25 +183,39 @@ class GameImplementation(
                     return
                 }
                 cleanBeforeNextTurn()
+                calculateScore()
                 onNextCard()
                 recentEvents.addAll(
-                    NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn),
-                    ScoresEvent(players.map { it.nick to it.summaries.last().sum() }.toMap())
+                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked),
+                    ScoresEvent(players.map { it.nick to it.summaries.last()
+                        .let { s: RoundSummary -> Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty) }
+                    }.toMap())
                 )
             } else {
                 cleanBeforeNextCard()
                 onNextCard()
                 recentEvents.addAll(
-                    NewCardEvent(deck[currentCardIndex].number(), ruinsDrawn)
+                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked)
                 )
             }
         }
     }
 
+    private fun calculateScore() {
+        val quest1 = scoreCards.getValue(season)
+        val quest2 = scoreCards.getValue(season.next())
+        players.forEach {
+            it.summaries = it.summaries + RoundSummary(
+                quest1.evaluate(it.board), quest2.evaluate(it.board), it.coins, it.board.countMonsterPoints()
+            )
+        }
+        season = season.next()
+    }
+
     private fun onNextCard() {
         while (deck[currentCardIndex] is Ruins) {
             currentCardIndex++
-            ruinsDrawn = true
+            ruinsPicked = true
         }
         // TODO
         // 1. monsters
@@ -223,9 +239,15 @@ class GameImplementation(
     private fun endGame() {
         val idToTotalScore =
             players.map { it.nick to it.summaries.sumBy(RoundSummary::sum) }.toMap()
-        recentEvents.addAll(ScoresEvent(idToTotalScore))
+        recentEvents.addAll(TotalScore(idToTotalScore))
         gameEnded = true
     }
+
+    override fun toString(): String {
+        return "GameImplementation(gameId='$gameId', deck=$deck, monstersDeck=$monstersDeck, scoreCards=$scoreCards, shuffler=$shuffler, season=$season, currentCardIndex=$currentCardIndex, pointsInRound=$pointsInRound, players=$players, ruinsDrawn=$ruinsPicked, monsterDrawn=$monsterDrawn, playersDone=$playersDone, recentEvents=$recentEvents, gameEnded=$gameEnded, started=$started)"
+    }
+
+
 }
 
 interface Game {

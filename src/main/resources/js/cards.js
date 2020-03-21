@@ -1,6 +1,6 @@
 var cards = {
     "14": {
-        "title": "Nadrzewna Osada",
+        "title": "NADRZEWNA OSADA",
         "terrains": ["CITY", "FOREST"],
         "points": 2,
         "shapes": [
@@ -11,7 +11,7 @@ var cards = {
         ]
     },
     "07": {
-        "title": "Wielka rzeka",
+        "title": "WIELKA RZEKA",
         "terrains": ["WATER"],
         "points": 2,
         "shapes": [
@@ -26,7 +26,7 @@ var cards = {
         ]
     },
     "10": {
-        "title": "Zapomniany Las",
+        "title": "ZAPOMNIANY LAS",
         "terrains": ["FOREST"],
         "points": 1,
         "shapes": [
@@ -209,15 +209,15 @@ d3Card.append("g")
     .attr("class", "title")
     .append("text")
     .attr("x", 0)
-    .attr("y", 15);
+    .attr("y", 25);
 
 d3Card.append("g")
-    .attr("transform", `translate(10 25)`)
+    .attr("transform", `translate(10 35)`)
     .attr("class", "terrain");
 
-function updateCard(card) {
+function updateCard(card, ruins) {
     d3.select("#current-card .title text")
-        .text(card.title);
+        .text(ruins ? card.title + " NA RUINACH" : card.title);
 
     // shapes
     const shapeUpdate = d3.select("#current-card").selectAll(".shape")
@@ -232,7 +232,7 @@ function updateCard(card) {
     const cardSize = 30;
 
     shapeUpdate.merge(shapeEnter)
-        .attr("transform", function (d, i) { return `translate(${10 + i * 150} ${70})`; });
+        .attr("transform", function (d, i) { return `translate(${10 + i * 150} ${80})`; });
 
     const shapeElementUpdate = shapeUpdate.merge(shapeEnter).selectAll("rect")
         .data(data => data.points);
