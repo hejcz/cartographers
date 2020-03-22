@@ -52,21 +52,7 @@ ws.onmessage = function (event) {
                 const sc = score_cards[prop];
                 const title = sc.title;
                 const desc = sc.description;
-                let descParts = [];
-                let currentStart = 0;
-                let splitAfter = 50;
-                let currentIndex = 0;
-                while (currentIndex < desc.length) {
-                    const spaceIndex = desc.indexOf(' ', currentIndex + splitAfter);
-                    if (spaceIndex !== -1) {
-                        descParts.push(desc.substring(currentIndex, spaceIndex));
-                        currentIndex = spaceIndex + 1;
-                    } else {
-                        descParts.push(desc.substring(currentIndex, desc.length));
-                        currentIndex = desc.length;
-                    }
-                }
-                return `<b>[${season}] ${title}</b><br />${descParts.join("<br />")}`
+                return `<b>[${season}] ${title}</b><br />${desc}`
             };
             d3.select("#goals-section")
                 .html(`${score_card_to_text(spring, "WIOSNA")}<br />${score_card_to_text(summer, "LATO")}
@@ -86,6 +72,13 @@ d3.select("#start")
 
 d3.select("#leave")
     .on("click", function () { ws.send(JSON.stringify({ "type": "leave" })) });
+
+d3.select("#goals")
+    .on("click", function () {
+        const gs = d3.select("#goals-section");
+        const display = gs.style("display");
+        gs.style("display", display === 'none' ? 'block' : 'none')
+     });
 
 const board = []
 for (let x = 0; x <= 10; x++) {
