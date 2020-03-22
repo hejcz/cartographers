@@ -48,7 +48,8 @@ private fun monsters(): Set<MonsterCard> =
     setOf(GoblinsAttack01, BogeymanAssault02, CoboldsCharge03, GnollsInvasion04)
 
 private fun randomScoreCards(): List<ScoreCard> =
-    listOf(GoldenBreadbasket32, ForestTower28, HugeCity35, TradingRoad40)
+    listOf(GoldenBreadbasket32, ForestTower28, HugeCity35,
+        setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random())
 // TODO unit test other score cards
 //    listOf(
 //        setOf(ForestGuard26, Coppice27, ForestTower28, MountainWoods29).random(),
