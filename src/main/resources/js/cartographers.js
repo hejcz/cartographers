@@ -150,6 +150,7 @@ drawBoard();
 drawCoins();
 drawPoints();
 
+
 function drawPoints() {
 
     const ps = d3.select("#points").selectAll(".pointsSection")
@@ -221,6 +222,20 @@ function drawPoints() {
             return `translate(${y * (w) / 2} ${w/6 + -x * (w) / 2})`;
         })
         .text(d => d);
+
+    if (scores[3] !== emptyArray) {
+        const total = scores[0][4] + scores[1][4] + scores[2][4] + scores[3][4];
+        d3.select("#points").selectAll("#total-score")
+            .data([0])
+            .enter()
+            .append("text")
+            .attr("id", "total-score")
+            .attr("x", "20")
+            .attr("y", "20")
+            .attr("font-size", "36")
+            .attr("transform", `translate(${4 * (w + off)} 60)`)
+            .text(total);
+    }
 }
 
 function drawCoins() {
