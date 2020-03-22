@@ -216,7 +216,9 @@ d3Card.append("g")
     .attr("class", "terrain");
 
 function updateCard(card, ruins) {
-    d3.select("#current-card .title text")
+    d3.select("#current-card")
+        .style("display", "block")
+        .select(".title text")
         .text(ruins ? card.title + " NA RUINACH" : card.title);
 
     // shapes

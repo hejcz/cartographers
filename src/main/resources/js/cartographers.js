@@ -224,13 +224,18 @@ function drawPoints() {
 }
 
 function drawCoins() {
+    const coinsInRow = 15;
+    const offsetToR = 0.1;
+    const r = 100 / (2 * coinsInRow + (coinsInRow - 1) * offsetToR);
+    const offset = offsetToR * r;
+
     const coins = d3.select("#coins")
         .selectAll("circle")
         .data(Array(coinsCount).fill({ "active": true }).concat(Array(15 - coinsCount).fill({ "active": false })));
     const enter = coins.enter()
         .append("circle")
-        .attr("r", 15)
-        .attr("cx", function (d, i) { return 25 + i * 35; })
+        .attr("r",`${r}%`)
+        .attr("cx", function (d, i) { return `${offset + r + i * (2 * r + offset)}%`; })
         .attr("cy", 30);
     coins.merge(enter).style("fill",
         function (d) {
