@@ -77,36 +77,53 @@ class App {
                     gidToRoom.filterValues { it == info.room }.onEach { gidToRoom.remove(it.key) }
                     newGameLock.unlock()
                 }
-                "join" -> {
+                "create" -> {
                     val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
                     if (wsToInfo[outgoing] != null) {
                         sendError("ALREADY_IN_GAME")
+                        return
                     }
                     val room = gidToRoom[gid]
                     if (room != null) {
-                        // TODO
-                        room.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
-                        wsToInfo[outgoing] = PlayerInfo(nick, room)
-                        sendEvent("JOIN_SUCCESS")
+                        sendError("ROOM_EXISTS")
                         return
                     }
                     newGameLock.lock()
                     val roomAfterLock = gidToRoom[gid]
                     if (roomAfterLock != null) {
                         newGameLock.unlock()
-                        // TODO
-                        roomAfterLock.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
-                        wsToInfo[outgoing] = PlayerInfo(nick, roomAfterLock)
-                        sendEvent("JOIN_SUCCESS")
+                        sendError("ROOM_EXISTS")
                         return
                     }
                     val newRoom = Room(gid)
-                    // TODO
                     newRoom.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
                     gidToRoom[gid] = newRoom
                     newGameLock.unlock()
                     wsToInfo[outgoing] = PlayerInfo(nick, newRoom)
-                    sendEvent("CREATE_SUCCESS")
+                    sendEvent("CREATE_SUCCESS", mapper.writeValueAsString(nick))
+                }
+                "rooms" -> {
+                    if (wsToInfo[outgoing] != null) {
+                        sendError("ALREADY_IN_GAME")
+                        return
+                    }
+                    sendEvent("rooms", mapper.writeValueAsString(gidToRoom.keys))
+                }
+                "join" -> {
+                    val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
+                    if (wsToInfo[outgoing] != null) {
+                        sendError("ALREADY_IN_GAME")
+                        return
+                    }
+                    val room = gidToRoom[gid]
+                    if (room != null) {
+                        // TODO
+                        room.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
+                        wsToInfo[outgoing] = PlayerInfo(nick, room)
+                        sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(nick))
+                        return
+                    }
+                    sendError("NO_SUCH_ROOM")
                 }
                 "start" -> {
                     val info = wsToInfo[outgoing]
@@ -136,5 +153,9 @@ private suspend fun DefaultWebSocketServerSession.sendError(error: String) {
 
 private suspend fun DefaultWebSocketServerSession.sendEvent(type: String) {
     outgoing.send(Frame.Text("""[{"type": "$type"}]"""))
+}
+
+private suspend fun DefaultWebSocketServerSession.sendEvent(type: String, data: String) {
+    outgoing.send(Frame.Text("""[{"type": "$type", "data": $data}]"""))
 }
 

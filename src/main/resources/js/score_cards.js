@@ -53,7 +53,7 @@ const score_cards = {
     },
     "39": {
         "title": "UTRACONE WŁOŚCI",
-        "description": "Zdobądź 3 punkty za każdy obszar wzdłóż jednej krawędzi największego kwadratu złożonego z wypełnionych obszarów."
+        "description": "Zdobądź 3 punkty za każdy obszar wzdłuż jednej krawędzi największego kwadratu złożonego z wypełnionych obszarów."
     },
     "40": {
         "title": "TRAKT HANDLOWY",

@@ -31,7 +31,15 @@ body {
     height: 75px;
 }
 
-#start, #leave {
+label {
+    margin-bottom: 5px;
+}
+
+#start, #leave, #goals {
+    margin-top: 20px;
+}
+
+#goals-section {
     margin-top: 20px;
 }
 
@@ -48,5 +56,10 @@ body > svg {
 }
 
 #goals-section {
+    font-size: 16px;
+}
+
+button {
+    padding: 10px;
     font-size: 16px;
 }

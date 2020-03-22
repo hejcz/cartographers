@@ -3,7 +3,7 @@ let currentTerrain = "FOREST";
 let coinsCount = 0;
 const emptyArray = [];
 const scores = [emptyArray, emptyArray, emptyArray, emptyArray];
-const nick = "julian" + Math.random();
+let nick = undefined;
 
 const host = window.location.hostname;
 const port = window.location.port;
@@ -11,12 +11,22 @@ let canPing = false;
 
 const ws = new WebSocket(
     host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
+
 ws.onopen = function () {
     setInterval(() => {
         // ping heroku to avoid H15 idle connection error
         ws.send(JSON.stringify({ "type": "ping"}));
     }, 30);
-    ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": "game1" } }));
+    d3.select("#create").on("click", () => {
+        const roomId = d3.select("#roomId").property("value");
+        const nick = d3.select("#nick").property("value");
+        ws.send(JSON.stringify({ "type": "create", "data": { "nick": nick, "gid": roomId } }));
+    });
+    d3.select("#join").on("click", () => {
+        const roomId = d3.select("#roomId").property("value");
+        const nick = d3.select("#nick").property("value");
+        ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": roomId } }));
+    });
 };
 
 ws.onmessage = function (event) {
@@ -60,11 +70,18 @@ ws.onmessage = function (event) {
                 const sc = score_cards[prop];
                 const title = sc.title;
                 const desc = sc.description;
-                return `<b>[${season}] ${title}</b><br />${desc}`
+                return `<div><h4>[${season}] ${title}</h4><p>${desc}</p></div>`
             };
             d3.select("#goals-section")
-                .html(`${score_card_to_text(spring, "WIOSNA")}<br />${score_card_to_text(summer, "LATO")}
-                <br />${score_card_to_text(autumn, "JESIEŃ")}<br />${score_card_to_text(winter, "ZIMA")}`);
+                .html(`${score_card_to_text(spring, "WIOSNA")}${score_card_to_text(summer, "LATO")}
+                ${score_card_to_text(autumn, "JESIEŃ")}${score_card_to_text(winter, "ZIMA")}`);
+        }
+        if (event["type"] === "CREATE_SUCCESS" || event["type"] === "JOIN_SUCCESS") {
+            const { data } = event;
+            nick = data;
+            d3.select("#start").style("display", null);
+            d3.select("#goals").style("display", null);
+            d3.select("#submit").style("display", null);
         }
     }
 };

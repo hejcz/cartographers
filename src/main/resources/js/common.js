@@ -1,5 +1,5 @@
 const colorByType = {
-    "EMPTY": "255,230,186",
+    "EMPTY": "255, 244, 224",
     "MOUNTAIN": "189, 139, 0",
     "FOREST": "37, 179, 89",
     "WATER": "71, 195, 214",

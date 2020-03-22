@@ -11,18 +11,24 @@
     <script src="https://d3js.org/d3.v5.min.js"></script>
 </head>
 <body>
+<div><h1>Cartographers: A Roll Player Tale</h1></div>
+
+<label for="nick">Nick:</label><br><br>
+<input type="text" id="nick" name="nick"><br><br>
+<label for="roomId">Room id:</label><br><br>
+<input type="text" id="roomId" name="roomId"><br><br>
+<button id="create">Create</button>
+<button id="join">Join</button>
+<button id="leave">Leave</button>
+
 <div>
-    Cartographers
+    <button id="start" style="display: none">Start</button>
 </div>
-<div>
-    <button id="start">Start</button>
-    <button id="leave">Leave</button>
-</div>
+<button id="goals" style="display: none">Goals</button>
+<div id="goals-section"></div>
 <div id="points-in-turn"></div>
 <svg id="current-card"></svg>
-<button id="goals">Goals</button>
-<button id="submit">Apply</button>
-<div id="goals-section"></div>
+<button id="submit" style="display: none">Apply</button>
 <svg id="game"></svg>
 <svg id="coins"></svg>
 <svg id="points"></svg>
