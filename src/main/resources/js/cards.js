@@ -10,6 +10,29 @@ var cards = {
             }
         ]
     },
+    "101": {
+        "title": "BARYKADY",
+        "terrains": ["PLAINS", "CITY"],
+        "points": 3,
+        "shapes": [
+            {
+                "points": [{"x": 0, "y": 0},{"x": -1, "y": 0},{"x": -2, "y": 0},{"x": -3, "y": 0},{"x": 0, "y": 2},
+                    {"x": -1, "y": 2},{"x": -2, "y": 2}, {"x": -3, "y": 2}],
+                "coin": false
+            }
+        ]
+    },
+    "102": {
+        "title": "WIELKIE MURY",
+        "terrains": ["CITY"],
+        "points": 1,
+        "shapes": [
+            {
+                "points": [{"x": 0, "y": 0},{"x": -2, "y": 0},{"x": 0, "y": 2},{"x": -2, "y": 2}],
+                "coin": true
+            }
+        ]
+    },
     "07": {
         "title": "WIELKA RZEKA",
         "terrains": ["WATER"],

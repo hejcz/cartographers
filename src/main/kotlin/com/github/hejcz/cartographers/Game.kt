@@ -1,5 +1,7 @@
 package com.github.hejcz.cartographers
 
+import com.github.hejcz.cartographers.custom.Barricades101
+import com.github.hejcz.cartographers.custom.GreatWalls102
 import java.util.*
 
 data class RoundSummary(

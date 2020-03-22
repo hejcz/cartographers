@@ -16,8 +16,9 @@ interface Shape {
             create(
                 img.trimIndent()
                     .lines()
+                    .dropWhile { it.isBlank() }
+                    .dropLastWhile { it.isBlank() }
                     .asSequence()
-                    .filter { it.isNotBlank() }
                     .map { it.trimEnd() }
                     .mapIndexed { rowIdx, it ->
                         it.mapIndexedNotNull { colIdx, c -> if (c == '[') Point(-rowIdx, colIdx / 3) else null }

@@ -10,10 +10,10 @@ object Barricades101 : Card {
     private val availableShapes =
         Shape.create(
             """
-            [ ]  [ ]
-            [ ]  [ ]
-            [ ]  [ ]
-            [ ]  [ ]
+            [ ]   [ ]
+            [ ]   [ ]
+            [ ]   [ ]
+            [ ]   [ ]
             """
         ).createAllVariations()
 
@@ -29,4 +29,29 @@ object Barricades101 : Card {
     override fun points(): Int = 3
 
     override fun givesCoin(shape: Shape): Boolean = false
+}
+
+object GreatWalls102 : Card {
+    override fun number(): String = "102"
+
+    private val availableShapes =
+        Shape.create(
+            """
+            [ ]   [ ]
+
+            [ ]   [ ]
+            """
+        ).createAllVariations()
+
+    private val matchingTerrains = setOf(
+        Terrain.CITY
+    )
+
+    override fun availableShapes(): Set<Shape> = availableShapes
+
+    override fun isValid(terrain: Terrain): Boolean = terrain in matchingTerrains
+
+    override fun points(): Int = 1
+
+    override fun givesCoin(shape: Shape): Boolean = true
 }
