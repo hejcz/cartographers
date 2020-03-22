@@ -93,7 +93,7 @@ class GameImplementation(
         cleanBeforeNextTurn()
         onNextCard()
         recentEvents.addAll(
-            NewCardEvent(deck[currentCardIndex].number(), ruinsPicked),
+            NewCardEvent(deck[currentCardIndex].number(), ruinsPicked, pointsInRound + deck[currentCardIndex].points(), season.pointsInRound),
             GoalsEvent(scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
                 scoreCardId(Season.WINTER)))
         return this
@@ -127,7 +127,6 @@ class GameImplementation(
     }
 
     private fun cleanBeforeNextCard() {
-        pointsInRound += deck[currentCardIndex].points()
         if (deck[currentCardIndex] is MonsterCard) {
             deck = deck - deck[currentCardIndex]
         } else {
@@ -186,6 +185,7 @@ class GameImplementation(
         playersDone.add(nick)
         recentEvents.add(nick, AcceptedShape(terrain, shape.toXYPoints().map { (x, y) -> Point(x, y) }, player.coins))
         if (players.size == playersDone.size) {
+            pointsInRound += deck[currentCardIndex].points()
             if (season.pointsInRound <= pointsInRound) {
                 if (season == Season.WINTER) {
                     calculateScore()
@@ -196,7 +196,7 @@ class GameImplementation(
                 calculateScore()
                 onNextCard()
                 recentEvents.addAll(
-                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked),
+                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked, pointsInRound + deck[currentCardIndex].points(), season.pointsInRound),
                     ScoresEvent(players.map { it.nick to it.summaries.last()
                         .let { s: RoundSummary -> Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty) }
                     }.toMap())
@@ -205,7 +205,7 @@ class GameImplementation(
                 cleanBeforeNextCard()
                 onNextCard()
                 recentEvents.addAll(
-                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked)
+                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked, pointsInRound + deck[currentCardIndex].points(), season.pointsInRound)
                 )
             }
         }

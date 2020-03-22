@@ -33,10 +33,14 @@ ws.onmessage = function (event) {
             drawCoins();
         }
         if (event["type"] === "NEW_CARD") {
-            const { card, ruins } = event;
+            const { card, ruins, currentTurnPoints, maxTurnPoints } = event;
             updateCard(cards[card], ruins);
             updateTerrains(cards[card].terrains);
             currentTerrain = cards[card].terrains[0];
+            d3.select("#points-in-turn")
+                .text(currentTurnPoints >= maxTurnPoints
+                    ? "OSTATNIA RUNDA W TEJ PORZE ROKU"
+                    : `PUNKTY PO TEJ TURZE: ${currentTurnPoints} / ${maxTurnPoints}`)
         }
         if (event["type"] === "SCORE") {
             const { quest1, quest2, coins, monsters } = event.scores[nick];
