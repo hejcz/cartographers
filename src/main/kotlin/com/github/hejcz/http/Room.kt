@@ -44,7 +44,7 @@ class Room(gid: String) {
 
     private fun handleEvents(nick: Nick) {
         val events = game.recentEvents(nick.nick)
-        val (allPlayersEvents, otherEvents) = events.partition { it is NewCardEvent || it is ScoresEvent }
+        val (allPlayersEvents, otherEvents) = events.partition { it.broadcast() }
         if (allPlayersEvents.isNotEmpty()) {
             callbacks.forEach { it.value(allPlayersEvents.toSet()) }
         }

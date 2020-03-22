@@ -46,10 +46,38 @@ ws.onmessage = function (event) {
             scores[idx] = [quest1, quest2, coins, -monsters, quest1 + quest2 + coins - monsters];
             drawPoints();
         }
+        if (event["type"] === "GOALS") {
+            const { spring, autumn, winter, summer } = event;
+            const score_card_to_text = (prop, season) => {
+                const sc = score_cards[prop];
+                const title = sc.title;
+                const desc = sc.description;
+                let descParts = [];
+                let currentStart = 0;
+                let splitAfter = 50;
+                let currentIndex = 0;
+                while (currentIndex < desc.length) {
+                    const spaceIndex = desc.indexOf(' ', currentIndex + splitAfter);
+                    if (spaceIndex !== -1) {
+                        descParts.push(desc.substring(currentIndex, spaceIndex));
+                        currentIndex = spaceIndex + 1;
+                    } else {
+                        descParts.push(desc.substring(currentIndex, desc.length));
+                        currentIndex = desc.length;
+                    }
+                }
+                return `<b>[${season}] ${title}</b><br />${descParts.join("<br />")}`
+            };
+            d3.select("#goals-section")
+                .html(`${score_card_to_text(spring, "WIOSNA")}<br />${score_card_to_text(summer, "LATO")}
+                <br />${score_card_to_text(autumn, "JESIEŃ")}<br />${score_card_to_text(winter, "ZIMA")}`);
+        }
     }
 };
 
-const rootSvg = d3.select("#game")
+const rootSvg = d3.select("#game");
+rootSvg.style("height", rootSvg.style("width"));
+
 rootSvg.append("svg")
     .attr("id", "board");
 
@@ -203,14 +231,14 @@ function drawPoints() {
 }
 
 function drawCoins() {
-    const coins = rootSvg.select("#board")
+    const coins = d3.select("#coins")
         .selectAll("circle")
         .data(Array(coinsCount).fill({ "active": true }).concat(Array(15 - coinsCount).fill({ "active": false })));
     const enter = coins.enter()
         .append("circle")
         .attr("r", 15)
         .attr("cx", function (d, i) { return 25 + i * 35; })
-        .attr("cy", 580);
+        .attr("cy", 30);
     coins.merge(enter).style("fill",
         function (d) {
             if (d.active) {
@@ -226,12 +254,16 @@ function drawBoard() {
         .selectAll(".cell")
         .data(board);
 
+    const cellSize = 100 / 11;
+
     const enter = cells.enter()
+        .append("svg")
+        .attr("x", d => `${d.y * cellSize}%`)
+        .attr("y", d => `${-d.x * cellSize}%`)
         .append("rect")
         .attr("class", "cell")
-        .attr("width", 50)
-        .attr("height", 50)
-        .attr("transform", function (d) { return `translate(${d.y * 50} ${-d.x * 50})`; })
+        .attr("width", `${cellSize}%`)
+        .attr("height", `${cellSize}%`)
         .style("stroke-width", "1px")
         .style("stroke", "grey")
         .on("click", function (d) {

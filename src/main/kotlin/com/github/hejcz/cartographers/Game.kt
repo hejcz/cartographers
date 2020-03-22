@@ -84,7 +84,6 @@ class GameImplementation(
     }
 
     override fun start(nick: String): Game {
-        println(scoreCards)
         if (started) {
             recentEvents.add(nick, ErrorEvent("ALREADY_STARTED"))
             return this
@@ -93,9 +92,14 @@ class GameImplementation(
         recentEvents = InMemoryEvents(players.map { it.nick })
         cleanBeforeNextTurn()
         onNextCard()
-        recentEvents.addAll(NewCardEvent(deck[currentCardIndex].number(), ruinsPicked))
+        recentEvents.addAll(
+            NewCardEvent(deck[currentCardIndex].number(), ruinsPicked),
+            GoalsEvent(scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
+                scoreCardId(Season.WINTER)))
         return this
     }
+
+    private fun scoreCardId(season: Season) = scoreCards.getValue(season)::class.java.simpleName.takeLast(2)
 
     override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game {
         update(nick, Shape.create(points), terrain)

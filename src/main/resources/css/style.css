@@ -8,18 +8,31 @@ body {
 }
 
 #game {
-    width: 600px;
-    height: 650px;
+    width: 100%;
+    max-width: 550px;
 }
 
-#submit, #start, #leave {
+#coins {
+    width: 100%;
+    max-width: 550px;
+}
+
+#start, #leave {
     margin-top: 20px;
 }
 
-svg {
+body > svg {
     display: block;
 }
 
 #current-card {
     margin-top: 20px;
+}
+
+#submit {
+    margin-bottom: 10px;
+}
+
+#goals-section {
+    font-size: 16px;
 }
