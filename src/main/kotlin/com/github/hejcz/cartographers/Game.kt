@@ -178,6 +178,11 @@ class GameImplementation(
         if (currentCard.givesCoin(shape)) {
             player.coins++
         }
+        player.coins += shape.toXYPoints()
+            .flatMap { (x, y) -> Point(x, y).adjacent(-10, 0, 0, 10) }
+            .distinct()
+            .filter { (x, y) -> player.board.terrainAt(x, y) == Terrain.MOUNTAIN }
+            .count { (x, y) -> Point(x, y).adjacent(-10, 0, 0, 10).all { (x, y) -> player.board.terrainAt(x, y) != Terrain.EMPTY } }
         playersDone.add(nick)
         recentEvents.add(nick, AcceptedShape(terrain, shape.toXYPoints().map { (x, y) -> Point(x, y) }, player.coins))
         if (players.size == playersDone.size) {
