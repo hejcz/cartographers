@@ -44,6 +44,7 @@ class App {
                     static("game") {
                         resources("css")
                         resources("js")
+                        resources("assets")
                         resource("index.html")
                     }
                     webSocket("/api") {

@@ -1,5 +1,4 @@
 const points = new Set();
-const selectedRuins = new Set();
 let currentTerrain = "FOREST";
 let coinsCount = 0;
 const emptyArray = [];
@@ -29,7 +28,6 @@ ws.onmessage = function (event) {
                 }
             });
             points.clear();
-            selectedRuins.clear();
             drawBoard();
             coinsCount = totalCoins;
             drawCoins();
@@ -94,7 +92,7 @@ for (const cell of board) {
         || cell.x == -8 && cell.y == 1
         || cell.x == -8 && cell.y == 9
         || cell.x == -9 && cell.y == 5) {
-        cell.type = "RUINS";
+        cell.hasRuins = true;
     }
 
     if (
@@ -128,8 +126,6 @@ function updateTerrains(terrains) {
             currentTerrain = d;
             [...points].filter(it => !it.locked).forEach(it => { it.type = "EMPTY"; });
             points.clear();
-            [...selectedRuins].filter(it => !it.locked).forEach(it => { it.type = "RUINS"; });
-            selectedRuins.clear();
             drawBoard();
         });
 
@@ -249,10 +245,12 @@ function drawBoard() {
 
     const cellSize = 100 / 11;
 
-    const enter = cells.enter()
+    const cellEnter = cells.enter()
         .append("svg")
         .attr("x", d => `${d.y * cellSize}%`)
-        .attr("y", d => `${-d.x * cellSize}%`)
+        .attr("y", d => `${-d.x * cellSize}%`);
+
+    const enter = cellEnter
         .append("rect")
         .attr("class", "cell")
         .attr("width", `${cellSize}%`)
@@ -263,23 +261,44 @@ function drawBoard() {
             if (d.locked) {
                 return;
             }
-            if (d.type === "EMPTY" || d.type === "RUINS") {
-                if (d.type === "RUINS") {
-                    selectedRuins.add(d);
-                }
+            if (d.type === "EMPTY") {
                 points.add(d);
                 d.type = currentTerrain;
             } else {
-                if (selectedRuins.has(d)) {
-                    selectedRuins.delete(d);
-                    d.type = "RUINS";
-                } else {
-                    d.type = "EMPTY";
-                }
+                d.type = "EMPTY";
                 points.delete(d);
             }
             drawBoard();
         });
+
+    const ruinsImage = cellEnter.filter(d => d.hasRuins)
+        .append("image")
+        .attr("href", "/game/ruins.svg")
+        .attr("width", `${cellSize*0.6}%`)
+        .attr("height", `${cellSize*0.6}%`)
+        .attr("x", `${cellSize*0.2}%`)
+        .attr("y", `${cellSize*0.2}%`)
+        .on("click", function (d) {
+            if (d.locked) {
+                return;
+            }
+            if (d.type === "EMPTY") {
+                points.add(d);
+                d.type = currentTerrain;
+            } else {
+                d.type = "EMPTY";
+                points.delete(d);
+            }
+            drawBoard();
+        });
+
+        const mountainImage = cellEnter.filter(d => d.type === "MOUNTAIN")
+            .append("image")
+            .attr("href", "/game/mountain.svg")
+            .attr("width", `${cellSize*0.6}%`)
+            .attr("height", `${cellSize*0.6}%`)
+            .attr("x", `${cellSize*0.2}%`)
+            .attr("y", `${cellSize*0.2}%`);
 
     cells.merge(enter)
         .style("fill-opacity", function (d) { return d.type == "EMPTY" || d.locked ? 1.0 : 0.7; })
