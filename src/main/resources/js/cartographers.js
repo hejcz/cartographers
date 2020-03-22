@@ -7,12 +7,18 @@ const nick = "julian" + Math.random();
 
 const host = window.location.hostname;
 const port = window.location.port;
+let canPing = false;
 
 const ws = new WebSocket(
     host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
 ws.onopen = function () {
+    setInterval(() => {
+        // ping heroku to avoid H15 idle connection error
+        ws.send(JSON.stringify({ "type": "ping"}));
+    }, 30);
     ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": "game1" } }));
 };
+
 ws.onmessage = function (event) {
     console.log(event);
     const events = JSON.parse(event.data);
