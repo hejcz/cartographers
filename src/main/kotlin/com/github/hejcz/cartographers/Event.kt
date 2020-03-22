@@ -65,4 +65,6 @@ data class ErrorEvent(val error: String, override val type: EventType = EventTyp
 
 data class GoalsEvent(val spring: String, val summer: String, val autumn: String, val winter: String,
                       override val type: EventType = EventType.GOALS
-) : Event
+) : Event {
+    override fun broadcast(): Boolean = true
+}
