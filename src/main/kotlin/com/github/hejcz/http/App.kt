@@ -19,6 +19,7 @@ import io.ktor.websocket.DefaultWebSocketServerSession
 import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
@@ -84,7 +85,7 @@ class App {
                     val room = gidToRoom[gid]
                     if (room != null) {
                         // TODO
-                        room.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                        room.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
                         wsToInfo[outgoing] = PlayerInfo(nick, room)
                         sendEvent("JOIN_SUCCESS")
                         return
@@ -94,14 +95,14 @@ class App {
                     if (roomAfterLock != null) {
                         newGameLock.unlock()
                         // TODO
-                        roomAfterLock.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                        roomAfterLock.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
                         wsToInfo[outgoing] = PlayerInfo(nick, roomAfterLock)
                         sendEvent("JOIN_SUCCESS")
                         return
                     }
                     val newRoom = Room(gid)
                     // TODO
-                    newRoom.join(Nick(nick)) { runBlocking { outgoing.send(Frame.Text(mapper.writeValueAsString(it))) } }
+                    newRoom.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
                     gidToRoom[gid] = newRoom
                     newGameLock.unlock()
                     wsToInfo[outgoing] = PlayerInfo(nick, newRoom)

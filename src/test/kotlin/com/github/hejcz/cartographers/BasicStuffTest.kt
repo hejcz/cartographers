@@ -21,12 +21,12 @@ class BasicStuffTest {
     @Test
     internal fun `has ruins in expected places`() {
         val board = Board.create()
-        Assertions.assertTrue(board.hasRuinsOn(-1, 5))
-        Assertions.assertTrue(board.hasRuinsOn(-2, 1))
-        Assertions.assertTrue(board.hasRuinsOn(-2, 9))
-        Assertions.assertTrue(board.hasRuinsOn(-8, 1))
-        Assertions.assertTrue(board.hasRuinsOn(-8, 9))
-        Assertions.assertTrue(board.hasRuinsOn(-9, 5))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-1, 5)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-2, 1)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-2, 9)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-8, 1)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-8, 9)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-9, 5)))
     }
 
     @Test
@@ -64,12 +64,12 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """
         )
-        Assertions.assertTrue(board.hasRuinsOn(-1, 5))
-        Assertions.assertTrue(board.hasRuinsOn(-2, 1))
-        Assertions.assertTrue(board.hasRuinsOn(-2, 9))
-        Assertions.assertTrue(board.hasRuinsOn(-8, 1))
-        Assertions.assertTrue(board.hasRuinsOn(-8, 9))
-        Assertions.assertTrue(board.hasRuinsOn(-9, 5))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-1, 5)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-2, 1)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-2, 9)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-8, 1)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-8, 9)))
+        Assertions.assertTrue(board.hasRuinsOn(Point(-9, 5)))
     }
 
     @Test
@@ -81,8 +81,7 @@ class BasicStuffTest {
     internal fun `apply shape to board`() {
         val game = (GameImplementation(
             deck = listOf(TreeFortress14, BigRiver07),
-            monstersDeck = emptyList(),
-            scoreCards = emptyMap()
+            monstersDeck = emptyList()
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
@@ -110,8 +109,7 @@ class BasicStuffTest {
     internal fun `apply shape with different terrain to board`() {
         val game = (GameImplementation(
             deck = listOf(TreeFortress14, BigRiver07),
-            monstersDeck = emptyList(),
-            scoreCards = emptyMap()
+            monstersDeck = emptyList()
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
@@ -139,8 +137,7 @@ class BasicStuffTest {
     internal fun `terrain is validated`() {
         val game = (GameImplementation(
             deck = listOf(TreeFortress14),
-            monstersDeck = emptyList(),
-            scoreCards = emptyMap()
+            monstersDeck = emptyList()
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
@@ -156,8 +153,7 @@ class BasicStuffTest {
     internal fun `can't add shape on another shape`() {
         val game = (GameImplementation(
             deck = listOf(BigRiver07, ForgottenForest10, BigRiver07),
-            monstersDeck = emptyList(),
-            scoreCards = emptyMap()
+            monstersDeck = emptyList()
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
@@ -208,8 +204,7 @@ class BasicStuffTest {
     internal fun `ruins flow`() {
         val game = (GameImplementation(
             deck = listOf(Ruins06, BigRiver07, ForgottenForest10, City09),
-            monstersDeck = emptyList(),
-            scoreCards = emptyMap()
+            monstersDeck = emptyList()
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")

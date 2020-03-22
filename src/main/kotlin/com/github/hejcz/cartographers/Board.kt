@@ -5,17 +5,17 @@ import kotlin.math.max
 
 interface Board {
     fun draw(shape: Shape, terrain: Terrain): Board
-    fun terrainAt(x: Int, y: Int): Terrain
-    fun all(predicate: (Terrain) -> Boolean): Set<Pair<Int, Int>>
-    fun allEmpty(): Set<Pair<Int, Int>>
+    fun terrainAt(point: Point): Terrain
+    fun all(predicate: (Terrain) -> Boolean): Set<Point>
+    fun allEmpty(): Set<Point>
     fun biggestSquareLength(): Int
     fun countFullRowsAndColumns(): Int
     fun countLeftToBottomDiameters(): Int
-    fun connectedTerrains(terrain: Terrain): Set<Set<Pair<Int, Int>>>
-    fun adjacent(xy: Pair<Int, Int>): Set<Pair<Int, Int>>
-    fun hasRuinsOn(x: Int, y: Int): Boolean
+    fun connectedTerrains(terrain: Terrain): Set<Set<Point>>
+    fun adjacent(point: Point): Set<Point>
+    fun hasRuinsOn(point: Point): Boolean
     fun noPlaceToDraw(shapes: Set<Shape>): Boolean
-    fun anyRuins(predicate: (Int, Int) -> Boolean): Boolean
+    fun anyRuins(predicate: (Point) -> Boolean): Boolean
     fun isAnyPossibleContaining(point: Point, shapes: Set<Shape>): Boolean
 
     companion object {
@@ -51,28 +51,20 @@ interface Board {
     }
 }
 
-class MapBoard(private val board: Map<Point, Terrain>) :
-    Board {
+class MapBoard(private val board: Map<Point, Terrain>) : Board {
     override fun draw(shape: Shape, terrain: Terrain): Board {
         val newBoard = board.toMutableMap()
-        for ((x, y) in shape.toXYPoints()) {
+        for ((x, y) in shape.toPoints()) {
             newBoard[Point(x, y)] = terrain
         }
         return MapBoard(newBoard.toMap().withDefault { Terrain.EMPTY })
     }
 
-    override fun terrainAt(x: Int, y: Int): Terrain = terrainAt(
-        Point(
-            x,
-            y
-        )
-    )
+    override fun all(predicate: (Terrain) -> Boolean): Set<Point> =
+        board.filterValues(predicate).keys
 
-    override fun all(predicate: (Terrain) -> Boolean): Set<Pair<Int, Int>> =
-        board.filterValues(predicate).keys.map { it.x to it.y }.toSet()
-
-    override fun allEmpty(): Set<Pair<Int, Int>> = (0 downTo -10).flatMap { x -> (0..10).map { x to it } }
-        .filter { !board.containsKey(Point(it.first, it.second)) }
+    override fun allEmpty(): Set<Point> = (0 downTo -10).flatMap { x -> (0..10).map { Point(x, it) } }
+        .filter { !board.containsKey(it) }
         .toSet()
 
     private fun allPoints(predicate: (Terrain) -> Boolean): Set<Point> =
@@ -82,7 +74,7 @@ class MapBoard(private val board: Map<Point, Terrain>) :
         var globalBest = 0
         for (x in 0 downTo -10) {
             for (y in 0..10) {
-                val localBest = (1..11).takeWhile { x - it >= -11 && y + it <= 11 && isSquareOfSize(x, y, it) }
+                val localBest = (1..11).takeWhile { x - it >= -11 && y + it <= 11 && isSquareOfSize(Point(x, y), it) }
                     .lastOrNull() ?: 0
                 globalBest = max(globalBest, localBest)
             }
@@ -91,22 +83,22 @@ class MapBoard(private val board: Map<Point, Terrain>) :
     }
 
     // assuming that there is square staring at x,y of size: size - 1
-    private fun isSquareOfSize(x: Int, y: Int, size: Int): Boolean = when (size) {
-        1 -> terrainAt(x, y) !in setOf(
+    private fun isSquareOfSize(point: Point, size: Int): Boolean = when (size) {
+        1 -> terrainAt(point) !in setOf(
             Terrain.EMPTY,
             Terrain.OUTSIDE_THE_MAP
         )
         else -> {
             val offset = size - 1
-            val row = x - offset
-            val col = y + offset
+            val row = point.x - offset
+            val col = point.y + offset
             IntStream.range(0, size)
                 .allMatch {
-                    terrainAt(row, y + it) !in setOf(
+                    terrainAt(Point(row, point.y + it)) !in setOf(
                         Terrain.EMPTY,
                         Terrain.OUTSIDE_THE_MAP
                     )
-                            && terrainAt(x - it, col) !in setOf(
+                            && terrainAt(Point(point.x - it, col)) !in setOf(
                         Terrain.EMPTY,
                         Terrain.OUTSIDE_THE_MAP
                     )
@@ -119,9 +111,9 @@ class MapBoard(private val board: Map<Point, Terrain>) :
                 board.entries.groupBy { it.key.y }.count { it.value.size == 11 }
 
     override fun countLeftToBottomDiameters(): Int =
-        (0 downTo -10).count { x -> (0..(10 + x)).all { y -> terrainAt(x - y, y) != Terrain.EMPTY } }
+        (0 downTo -10).count { x -> (0..(10 + x)).all { y -> terrainAt(Point(x - y, y)) != Terrain.EMPTY } }
 
-    override fun connectedTerrains(terrain: Terrain): Set<Set<Pair<Int, Int>>> {
+    override fun connectedTerrains(terrain: Terrain): Set<Set<Point>> {
         val points = allPoints { it == terrain }
         var groupId = 0
         val pointToGroup = mutableMapOf(*(points.map { it to groupId++ }.toTypedArray()))
@@ -139,28 +131,25 @@ class MapBoard(private val board: Map<Point, Terrain>) :
             }
         }
         return pointToGroup.entries.groupBy { it.value }
-            .mapValues { (_, v) -> v.map { it.key.x to it.key.y }.toSet() }
+            .mapValues { (_, v) -> v.map { it.key }.toSet() }
             .values
             .toSet()
     }
 
-    override fun adjacent(xy: Pair<Int, Int>) =
-        Point(xy.first, xy.second).adjacent(-10, 0, 0, 10)
-            .map { it.x to it.y }
-            .toSet()
+    override fun adjacent(point: Point): Set<Point> = point.adjacent(-10, 0, 0, 10).toSet()
 
-    override fun hasRuinsOn(x: Int, y: Int): Boolean = Point(x, y) in ruins
+    override fun hasRuinsOn(point: Point): Boolean = point in ruins
 
     override fun noPlaceToDraw(shapes: Set<Shape>): Boolean = shapes.none { shape ->
-        val maxX = shape.toXYPoints().maxBy { it.first }?.first ?: throw RuntimeException("Empty shape")
-        val points = shape.toXYPoints().map { it.first - maxX to it.second }
+        val maxX = shape.toPoints().maxBy { it.x }?.x ?: throw RuntimeException("Empty shape")
+        val points = shape.toPoints().map { it.x - maxX to it.y }
         val minX = points.minBy { it.first }?.first ?: throw RuntimeException("Empty shape")
         val maxY = points.maxBy { it.second }?.second ?: throw RuntimeException("Empty shape")
         val width = maxY + 1
         val height = -minX + 1
         for (row in (0..(11 - height))) {
             for (col in (0..(11 - width))) {
-                if (points.all { terrainAt(it.first - row, it.second + col) == Terrain.EMPTY }) {
+                if (points.all { terrainAt(Point(it.first - row, it.second + col)) == Terrain.EMPTY }) {
                     return@none true
                 }
             }
@@ -168,14 +157,14 @@ class MapBoard(private val board: Map<Point, Terrain>) :
         false
     }
 
-    override fun anyRuins(predicate: (Int, Int) -> Boolean): Boolean =
-        ruins.any { (x, y) -> predicate(x, y) }
+    override fun anyRuins(predicate: (Point) -> Boolean): Boolean =
+        ruins.any { predicate(it) }
 
     override fun isAnyPossibleContaining(point: Point, shapes: Set<Shape>): Boolean {
         for (s in shapes) {
             for (v in s.createAllVariations()) {
                 for (version in v.allVersionsContaining(point)) {
-                    val impossible = version.anyMatches { (x, y) -> terrainAt(x, y) != Terrain.EMPTY }
+                    val impossible = version.anyMatches { (x, y) -> terrainAt(Point(x, y)) != Terrain.EMPTY }
                     if (!impossible) {
                         return true
                     }
@@ -185,15 +174,15 @@ class MapBoard(private val board: Map<Point, Terrain>) :
         return false
     }
 
-    private fun terrainAt(p: Point): Terrain = when {
-        p.x > 0 || p.x < -10 || p.y < 0 || p.y > 10 -> Terrain.OUTSIDE_THE_MAP
-        else -> board.getValue(p)
+    override fun terrainAt(point: Point): Terrain = when {
+        point.x > 0 || point.x < -10 || point.y < 0 || point.y > 10 -> Terrain.OUTSIDE_THE_MAP
+        else -> board.getValue(point)
     }
 
     override fun toString(): String =
         "\n" + (0 downTo -10).joinToString("\n") { x ->
             (0..10).joinToString("") { y ->
-                this.terrainAt(x, y).toString()
+                this.terrainAt(Point(x, y)).toString()
             }
         } + "\n"
 
@@ -210,8 +199,8 @@ class MapBoard(private val board: Map<Point, Terrain>) :
 }
 
 data class Point(val x: Int, val y: Int) {
-    private fun moveX(offset: Int) = Point(x + offset, y)
-    private fun moveY(offset: Int) = Point(x, y + offset)
+    fun moveX(offset: Int) = Point(x + offset, y)
+    fun moveY(offset: Int) = Point(x, y + offset)
 
     fun adjacent(minX: Int, maxX: Int, minY: Int, maxY: Int) =
         listOf(

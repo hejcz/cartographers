@@ -37,7 +37,7 @@ fun Season.next(): Season {
 fun Board.countMonsterPoints(): Int = all { it == Terrain.MONSTER }
     .flatMap { xy -> adjacent(xy) }
     .toSet()
-    .count { terrainAt(it.first, it.second) == Terrain.EMPTY }
+    .count { terrainAt(it) == Terrain.EMPTY }
 
 private fun cards() = listOf(
     Ruins05, Ruins06, BigRiver07, Fields08, City09, ForgottenForest10, RuralStream11,
@@ -103,7 +103,7 @@ class GameImplementation(
     private fun scoreCardId(season: Season) = scoreCards.getValue(season)::class.java.simpleName.takeLast(2)
 
     override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game {
-        update(nick, Shape.create(points), terrain)
+        update(nick, Shape.create(points.map { (x, y) -> Point(x, y) }.toSet()), terrain)
         return this
     }
 
@@ -159,17 +159,17 @@ class GameImplementation(
             recentEvents.add(nick, ErrorEvent("invalid terrain"))
             return
         }
-        if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) == Terrain.OUTSIDE_THE_MAP }) {
+        if (shape.anyMatches { player.board.terrainAt(it) == Terrain.OUTSIDE_THE_MAP }) {
             recentEvents.add(nick, ErrorEvent("shape outside the map"))
             return
         }
-        if (shape.anyMatches { (x, y) -> player.board.terrainAt(x, y) != Terrain.EMPTY }) {
+        if (shape.anyMatches { player.board.terrainAt(it) != Terrain.EMPTY }) {
             recentEvents.add(nick, ErrorEvent("shape on taken point"))
             return
         }
-        if (ruinsPicked && !shape.anyMatches { (x, y) -> player.board.hasRuinsOn(x, y) }
-            && player.board.anyRuins { x, y -> player.board.terrainAt(x, y) == Terrain.EMPTY
-                    && player.board.isAnyPossibleContaining(Point(x, y), currentCard.availableShapes()) }) {
+        if (ruinsPicked && !shape.anyMatches { player.board.hasRuinsOn(it) }
+            && player.board.anyRuins { player.board.terrainAt(it) == Terrain.EMPTY
+                    && player.board.isAnyPossibleContaining(it, currentCard.availableShapes()) }) {
             // corner case - some ruins are free but shape cant be drawn on them
             recentEvents.add(nick, ErrorEvent("shape must be on ruins"))
             return
@@ -178,13 +178,9 @@ class GameImplementation(
         if (currentCard.givesCoin(shape)) {
             player.coins++
         }
-        player.coins += shape.toXYPoints()
-            .flatMap { (x, y) -> Point(x, y).adjacent(-10, 0, 0, 10) }
-            .distinct()
-            .filter { (x, y) -> player.board.terrainAt(x, y) == Terrain.MOUNTAIN }
-            .count { (x, y) -> Point(x, y).adjacent(-10, 0, 0, 10).all { (x, y) -> player.board.terrainAt(x, y) != Terrain.EMPTY } }
+        player.coins += countMountainsClosedWith(shape, player.board)
         playersDone.add(nick)
-        recentEvents.add(nick, AcceptedShape(terrain, shape.toXYPoints().map { (x, y) -> Point(x, y) }, player.coins))
+        recentEvents.add(nick, AcceptedShape(terrain, shape.toPoints().map { (x, y) -> Point(x, y) }, player.coins))
         if (players.size == playersDone.size) {
             pointsInRound += deck[currentCardIndex].points()
             if (season.pointsInRound <= pointsInRound) {
@@ -211,6 +207,12 @@ class GameImplementation(
             }
         }
     }
+
+    private fun countMountainsClosedWith(shape: Shape, board: Board): Int = shape.toPoints()
+        .flatMap { it.adjacent(-10, 0, 0, 10) }
+        .distinct()
+        .filter { board.terrainAt(it) == Terrain.MOUNTAIN }
+        .count { mountain -> mountain.adjacent(-10, 0, 0, 10).all { board.terrainAt(it) != Terrain.EMPTY } }
 
     private fun calculateScore() {
         val quest1 = scoreCards.getValue(season)
