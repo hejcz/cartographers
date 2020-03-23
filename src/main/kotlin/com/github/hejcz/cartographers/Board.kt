@@ -17,6 +17,7 @@ interface Board {
     fun noPlaceToDraw(shapes: Set<Shape>): Boolean
     fun anyRuins(predicate: (Point) -> Boolean): Boolean
     fun isAnyPossibleContaining(point: Point, shapes: Set<Shape>): Boolean
+    fun allPoints(): Set<BoardElement>
 
     companion object {
         fun create(): Board =
@@ -173,6 +174,9 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
         }
         return false
     }
+
+    override fun allPoints(): Set<BoardElement> =
+        board.map { (p, terrain) -> BoardElement(p.x, p.y, terrain) }.toSet()
 
     override fun terrainAt(point: Point): Terrain = when {
         point.x > 0 || point.x < -10 || point.y < 0 || point.y > 10 -> Terrain.OUTSIDE_THE_MAP

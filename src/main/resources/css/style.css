@@ -51,6 +51,11 @@ body > svg {
     margin-top: 20px;
 }
 
+#errors {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
 #submit {
     margin-bottom: 10px;
 }

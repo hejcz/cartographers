@@ -1,0 +1,20 @@
+package com.github.hejcz.cartographers
+
+enum class ErrorCode {
+    ALREADY_IN_GAME,
+    GAME_NOT_FOUND,
+    ROOM_EXISTS,
+    NO_SUCH_ROOM,
+    GAME_IN_PROGRESS,
+    CANT_DRAW_TWICE,
+    GAME_FINISHED,
+    EMPTY_SHAPE,
+    INVALID_SHAPE,
+    INVALID_TERRAIN_TYPE,
+    SHAPE_OUTSIDE_THE_MAP,
+    SHAPES_CANT_OVERLAP,
+    SHAPE_MUST_BE_ON_RUINS,
+    NICK_TAKEN,
+    GAME_NOT_STARTED_YET,
+    CANT_JOIN
+}

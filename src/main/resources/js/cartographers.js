@@ -4,6 +4,7 @@ let coinsCount = 0;
 const emptyArray = [];
 const scores = [emptyArray, emptyArray, emptyArray, emptyArray];
 let nick = undefined;
+let board = [];
 
 const host = window.location.hostname;
 const port = window.location.port;
@@ -13,10 +14,6 @@ const ws = new WebSocket(
     host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
 
 ws.onopen = function () {
-    setInterval(() => {
-        // ping heroku to avoid H15 idle connection error
-        ws.send(JSON.stringify({ "type": "ping"}));
-    }, 30);
     d3.select("#create").on("click", () => {
         const roomId = d3.select("#roomId").property("value");
         const nick = d3.select("#nick").property("value");
@@ -59,8 +56,20 @@ ws.onmessage = function (event) {
                     : `PUNKTY PO TEJ TURZE: ${currentTurnPoints} / ${maxTurnPoints}`)
         }
         if (event["type"] === "SCORE") {
-            const { quest1, quest2, coins, monsters } = event.scores[nick];
-            const idx = scores.indexOf(emptyArray);
+            const { quest1, quest2, coins, monsters, season } = event.score;
+            let idx = undefined;
+            if (season === "SPRING") {
+                idx = 0;
+            }
+            if (season === "SUMMER") {
+                idx = 1;
+            }
+            if (season === "AUTUMN") {
+                idx = 2;
+            }
+            if (season === "WINTER") {
+                idx = 3;
+            }
             scores[idx] = [quest1, quest2, coins, -monsters, quest1 + quest2 + coins - monsters];
             drawPoints();
         }
@@ -82,6 +91,31 @@ ws.onmessage = function (event) {
             d3.select("#start").style("display", null);
             d3.select("#goals").style("display", null);
             d3.select("#submit").style("display", null);
+        }
+        if (event["type"] === "ERROR") {
+            const { error } = event;
+            d3.select("#errors")
+                .append("div")
+                .text(error)
+                .transition()
+                .duration(3000)
+                .remove();
+        }
+        if (event["type"] === "BOARD") {
+            event.board.forEach(cell => {
+                const {x, y, terrain} = cell;
+                const match = board.find(c => c.x === x && c.y === y);
+                if (match) {
+                    match.type = terrain;
+                    match.locked = true;
+                }
+            });
+            updateBoard();
+            drawBoard();
+        }
+        if (event["type"] === "COINS") {
+            coinsCount = event.coins;
+            drawCoins();
         }
     }
 };
@@ -105,32 +139,35 @@ d3.select("#goals")
         gs.style("display", display === 'none' ? 'block' : 'none')
      });
 
-const board = []
 for (let x = 0; x <= 10; x++) {
     for (let y = 0; y <= 10; y++) {
         board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
     }
 }
 
-for (const cell of board) {
-    if (cell.x == -1 && cell.y == 5
-        || cell.x == -2 && cell.y == 1
-        || cell.x == -2 && cell.y == 9
-        || cell.x == -8 && cell.y == 1
-        || cell.x == -8 && cell.y == 9
-        || cell.x == -9 && cell.y == 5) {
-        cell.hasRuins = true;
-    }
+updateBoard();
 
-    if (
-        cell.x == -1 && cell.y == 3
-        || cell.x == -2 && cell.y == 8
-        || cell.x == -5 && cell.y == 5
-        || cell.x == -8 && cell.y == 2
-        || cell.x == -9 && cell.y == 7
-    ) {
-        cell.type = "MOUNTAIN";
-        cell.locked = true;
+function updateBoard() {
+    for (const cell of board) {
+        if (cell.x == -1 && cell.y == 5
+            || cell.x == -2 && cell.y == 1
+            || cell.x == -2 && cell.y == 9
+            || cell.x == -8 && cell.y == 1
+            || cell.x == -8 && cell.y == 9
+            || cell.x == -9 && cell.y == 5) {
+            cell.hasRuins = true;
+        }
+
+        if (
+            cell.x == -1 && cell.y == 3
+            || cell.x == -2 && cell.y == 8
+            || cell.x == -5 && cell.y == 5
+            || cell.x == -8 && cell.y == 2
+            || cell.x == -9 && cell.y == 7
+        ) {
+            cell.type = "MOUNTAIN";
+            cell.locked = true;
+        }
     }
 }
 

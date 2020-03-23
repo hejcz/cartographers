@@ -1,7 +1,5 @@
 package com.github.hejcz.cartographers
 
-import com.github.hejcz.cartographers.custom.Barricades101
-import com.github.hejcz.cartographers.custom.GreatWalls102
 import java.util.*
 
 data class RoundSummary(
@@ -14,17 +12,29 @@ data class RoundSummary(
 }
 
 class Player(val nick: String) {
-    var board: Board =
-        Board.create()
+    var left: Boolean = false
+    var board: Board = Board.create()
     var coins = 0
     var summaries = listOf<RoundSummary>()
+
+    override fun toString(): String = "Player(nick='$nick', board=$board, coins=$coins, summaries=$summaries)"
 }
 
 enum class Season(val pointsInRound: Int) {
     SPRING(8),
     SUMMER(8),
     AUTUMN(7),
-    WINTER(6)
+    WINTER(6);
+
+    companion object {
+        fun byIndex(index: Int): Season = when (index) {
+            0 -> SPRING
+            1 -> SUMMER
+            2 -> AUTUMN
+            3 -> WINTER
+            else -> throw RuntimeException("Illegal index for season $index")
+        }
+    }
 }
 
 fun Season.next(): Season {
@@ -77,18 +87,44 @@ class GameImplementation(
     private var ruinsPicked: Boolean = false
     private var monsterDrawn: Boolean = false
     private val playersDone: MutableSet<String> = mutableSetOf()
-    lateinit var recentEvents: Events
+    private var recentEvents: Events = InMemoryEvents(emptyList())
     private var gameEnded: Boolean = false
     private var started: Boolean = false
 
+    override fun canJoin(nick: String): Boolean = !started || player(nick)?.left ?: false
+
     override fun join(nick: String): Game {
-        players = players + Player(nick)
+        recentEvents.clear()
+        if (player(nick)?.left == true) {
+            processReconnect(nick)
+        } else {
+            processFirstConnection(nick)
+        }
         return this
+    }
+
+    private fun processFirstConnection(nick: String) {
+        players = players + Player(nick)
+        recentEvents = InMemoryEvents(players.map { it.nick })
+    }
+
+    private fun processReconnect(nick: String) {
+        player(nick)?.left = false
+        val player = player(nick)!!
+        (setOf(
+            NewCardEvent(deck[currentCardIndex].number(), ruinsPicked, pointsInRound + deck[currentCardIndex].points(), season.pointsInRound),
+            GoalsEvent(scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
+                scoreCardId(Season.WINTER)),
+            BoardEvent(player.board.allPoints()),
+            CoinsEvent(player.coins)
+        ) + player.summaries
+                .mapIndexed { index, it -> ScoresEvent(Score(it.quest1Points, it.quest2Points, it.coinsPoints, it.monstersPenalty, Season.byIndex(index))) })
+            .forEach { recentEvents.add(player.nick, it) }
     }
 
     override fun start(nick: String): Game {
         if (started) {
-            recentEvents.add(nick, ErrorEvent("ALREADY_STARTED"))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.GAME_IN_PROGRESS))
             return this
         }
         started = true
@@ -105,7 +141,11 @@ class GameImplementation(
     private fun scoreCardId(season: Season) = scoreCards.getValue(season)::class.java.simpleName.takeLast(2)
 
     override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game {
-        update(nick, Shape.create(points.map { (x, y) -> Point(x, y) }.toSet()), terrain)
+        when {
+            !started -> recentEvents.add(nick, ErrorEvent(ErrorCode.GAME_NOT_STARTED_YET))
+            gameEnded -> recentEvents.add(nick, ErrorEvent(ErrorCode.GAME_FINISHED))
+            else -> update(nick, Shape.create(points.map { (x, y) -> Point(x, y) }.toSet()), terrain)
+        }
         return this
     }
 
@@ -114,6 +154,11 @@ class GameImplementation(
     override fun boardOf(nick: String): Board = player(nick)?.board!!
 
     override fun recentEvents(nick: String): Set<Event> = recentEvents.of(nick)
+
+    override fun leave(nick: String): Game {
+        player(nick)?.left = true
+        return this
+    }
 
     private fun cleanBeforeNextTurn() {
         if (monstersDeck.isNotEmpty()) {
@@ -142,38 +187,38 @@ class GameImplementation(
 
     private fun update(nick: String, shape: Shape, terrain: Terrain) {
         if (nick in playersDone) {
-            recentEvents.add(nick, ErrorEvent("already drawn"))
-            return
-        }
-        if (gameEnded) {
-            recentEvents.add(nick, ErrorEvent("game ended"))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.CANT_DRAW_TWICE))
             return
         }
         recentEvents.clear()
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
         val isOneOnOneSpecialCase = shape.size() == 1 && player.board.noPlaceToDraw(currentCard.availableShapes())
+        if (shape.toPoints().isEmpty()) {
+            recentEvents.add(nick, ErrorEvent(ErrorCode.EMPTY_SHAPE))
+            return
+        }
         if (!currentCard.isValid(shape) && !isOneOnOneSpecialCase) {
-            recentEvents.add(nick, ErrorEvent("invalid shape"))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_SHAPE))
             return
         }
         if (!currentCard.isValid(terrain)) {
-            recentEvents.add(nick, ErrorEvent("invalid terrain"))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_TERRAIN_TYPE))
             return
         }
         if (shape.anyMatches { player.board.terrainAt(it) == Terrain.OUTSIDE_THE_MAP }) {
-            recentEvents.add(nick, ErrorEvent("shape outside the map"))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_OUTSIDE_THE_MAP))
             return
         }
         if (shape.anyMatches { player.board.terrainAt(it) != Terrain.EMPTY }) {
-            recentEvents.add(nick, ErrorEvent("shape on taken point"))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPES_CANT_OVERLAP))
             return
         }
         if (ruinsPicked && !shape.anyMatches { player.board.hasRuinsOn(it) }
             && player.board.anyRuins { player.board.terrainAt(it) == Terrain.EMPTY
                     && player.board.isAnyPossibleContaining(it, currentCard.availableShapes()) }) {
             // corner case - some ruins are free but shape cant be drawn on them
-            recentEvents.add(nick, ErrorEvent("shape must be on ruins"))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_MUST_BE_ON_RUINS))
             return
         }
         player.board = player.board.draw(shape, terrain)
@@ -188,17 +233,19 @@ class GameImplementation(
             if (season.pointsInRound <= pointsInRound) {
                 if (season == Season.WINTER) {
                     calculateScore()
+                    season = season.next()
                     endGame()
                     return
                 }
                 cleanBeforeNextTurn()
                 calculateScore()
+                players.map { it.nick to it.summaries.last().let { s: RoundSummary ->
+                    Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, season) } }
+                    .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
+                season = season.next()
                 onNextCard()
                 recentEvents.addAll(
-                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked, pointsInRound + deck[currentCardIndex].points(), season.pointsInRound),
-                    ScoresEvent(players.map { it.nick to it.summaries.last()
-                        .let { s: RoundSummary -> Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty) }
-                    }.toMap())
+                    NewCardEvent(deck[currentCardIndex].number(), ruinsPicked, pointsInRound + deck[currentCardIndex].points(), season.pointsInRound)
                 )
             } else {
                 cleanBeforeNextCard()
@@ -224,7 +271,6 @@ class GameImplementation(
                 quest1.evaluate(it.board), quest2.evaluate(it.board), it.coins, it.board.countMonsterPoints()
             )
         }
-        season = season.next()
     }
 
     private fun onNextCard() {
@@ -252,11 +298,10 @@ class GameImplementation(
     }
 
     private fun endGame() {
-        recentEvents.addAll(
-            ScoresEvent(players.map { it.nick to it.summaries.last()
-                .let { s: RoundSummary -> Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty) }
-            }.toMap()),
-            Results(players.maxBy { it.summaries.sumBy(RoundSummary::sum) }?.nick!!))
+        players.map { it.nick to it.summaries.last().let { s: RoundSummary ->
+            Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, Season.WINTER) } }
+            .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
+        recentEvents.addAll(Results(players.maxBy { it.summaries.sumBy(RoundSummary::sum) }?.nick!!))
         gameEnded = true
     }
 
@@ -273,4 +318,6 @@ interface Game {
     fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game
     fun boardOf(nick: String): Board
     fun recentEvents(nick: String): Set<Event>
+    fun leave(nick: String): Game
+    fun canJoin(nick: String): Boolean
 }

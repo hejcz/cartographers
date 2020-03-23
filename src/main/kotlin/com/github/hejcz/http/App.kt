@@ -2,16 +2,21 @@ package com.github.hejcz.http
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.hejcz.cartographers.ErrorCode
 import com.github.hejcz.cartographers.Point
 import com.github.hejcz.cartographers.Terrain
+import io.ktor.application.call
 import io.ktor.application.install
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.http.cio.websocket.readText
 import io.ktor.http.content.resource
 import io.ktor.http.content.resources
 import io.ktor.http.content.static
+import io.ktor.response.respondRedirect
+import io.ktor.routing.get
 import io.ktor.routing.routing
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
@@ -20,7 +25,6 @@ import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.sendBlocking
-import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
@@ -40,8 +44,14 @@ class App {
         @JvmStatic
         fun main(args: Array<String>) {
             embeddedServer(Netty, System.getProperty("SERVER_PORT", "8080").toInt()) {
-                install(WebSockets)
+                install(WebSockets) {
+                    pingPeriodMillis = 5000
+                    timeoutMillis = 5000
+                }
                 routing {
+                    get("/") {
+                        call.respondRedirect("/game/index.html", true)
+                    }
                     static("game") {
                         resources("css")
                         resources("js")
@@ -54,10 +64,11 @@ class App {
                                 when (frame) {
                                     is Frame.Text -> handle(mapper.readValue(frame.readText()))
                                 }
-                            } catch (ex: Throwable) {
-                                ex.printStackTrace()
+                            } catch (e: Throwable) {
+                                e.printStackTrace()
                             }
                         }
+                        handle(Command("leave", NullNode.getInstance()))
                     }
                 }
             }.start(wait = true)
@@ -69,30 +80,28 @@ class App {
                 "leave" -> {
                     val info = wsToInfo[outgoing]
                     if (info == null) {
-                        sendError("game not found")
+                        sendError(ErrorCode.GAME_NOT_FOUND)
                         return
                     }
-                    newGameLock.lock()
-                    wsToInfo.filterValues { it.room == info.room }.onEach { wsToInfo.remove(it.key) }
-                    gidToRoom.filterValues { it == info.room }.onEach { gidToRoom.remove(it.key) }
-                    newGameLock.unlock()
+                    info.room.leave(Nick(info.nick))
+                    wsToInfo.remove(outgoing)
                 }
                 "create" -> {
                     val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
                     if (wsToInfo[outgoing] != null) {
-                        sendError("ALREADY_IN_GAME")
+                        sendError(ErrorCode.ALREADY_IN_GAME)
                         return
                     }
                     val room = gidToRoom[gid]
                     if (room != null) {
-                        sendError("ROOM_EXISTS")
+                        sendError(ErrorCode.ROOM_EXISTS)
                         return
                     }
                     newGameLock.lock()
                     val roomAfterLock = gidToRoom[gid]
                     if (roomAfterLock != null) {
                         newGameLock.unlock()
-                        sendError("ROOM_EXISTS")
+                        sendError(ErrorCode.ROOM_EXISTS)
                         return
                     }
                     val newRoom = Room(gid)
@@ -104,31 +113,32 @@ class App {
                 }
                 "rooms" -> {
                     if (wsToInfo[outgoing] != null) {
-                        sendError("ALREADY_IN_GAME")
+                        sendError(ErrorCode.ALREADY_IN_GAME)
                         return
                     }
-                    sendEvent("rooms", mapper.writeValueAsString(gidToRoom.keys))
+                    sendEvent("ROOMS", mapper.writeValueAsString(gidToRoom.keys))
                 }
                 "join" -> {
                     val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
                     if (wsToInfo[outgoing] != null) {
-                        sendError("ALREADY_IN_GAME")
+                        sendError(ErrorCode.ALREADY_IN_GAME)
                         return
                     }
                     val room = gidToRoom[gid]
                     if (room != null) {
                         // TODO
-                        room.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
-                        wsToInfo[outgoing] = PlayerInfo(nick, room)
-                        sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(nick))
+                        if (room.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }) {
+                            wsToInfo[outgoing] = PlayerInfo(nick, room)
+                            sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(nick))
+                        }
                         return
                     }
-                    sendError("NO_SUCH_ROOM")
+                    sendError(ErrorCode.NO_SUCH_ROOM)
                 }
                 "start" -> {
                     val info = wsToInfo[outgoing]
                     if (info == null) {
-                        sendError("game not found")
+                        sendError(ErrorCode.GAME_NOT_FOUND)
                         return
                     }
                     info.room.start(Nick(info.nick))
@@ -136,7 +146,7 @@ class App {
                 "draw" -> {
                     val info = wsToInfo[outgoing]
                     if (info == null) {
-                        sendError("game not found")
+                        sendError(ErrorCode.GAME_NOT_FOUND)
                         return
                     }
                     info.room.draw(Nick(info.nick), mapper.readValue(command.data.toString()))
@@ -147,12 +157,8 @@ class App {
 
 }
 
-private suspend fun DefaultWebSocketServerSession.sendError(error: String) {
-    outgoing.send(Frame.Text("""[{"type": "error", "error": "$error"}]"""))
-}
-
-private suspend fun DefaultWebSocketServerSession.sendEvent(type: String) {
-    outgoing.send(Frame.Text("""[{"type": "$type"}]"""))
+private suspend fun DefaultWebSocketServerSession.sendError(error: ErrorCode) {
+    outgoing.send(Frame.Text("""[{"type": "ERROR", "error": "$error"}]"""))
 }
 
 private suspend fun DefaultWebSocketServerSession.sendEvent(type: String, data: String) {

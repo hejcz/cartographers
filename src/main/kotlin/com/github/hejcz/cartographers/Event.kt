@@ -6,7 +6,9 @@ enum class EventType {
     SCORE,
     RESULTS,
     ERROR,
-    GOALS
+    GOALS,
+    BOARD,
+    COINS
 }
 
 interface Events {
@@ -36,6 +38,10 @@ class InMemoryEvents(private val nicks: List<String>) : Events {
     override fun clear() {
         map = empty
     }
+
+    override fun toString(): String {
+        return "InMemoryEvents(map=$map)"
+    }
 }
 
 interface Event {
@@ -51,9 +57,9 @@ data class NewCardEvent(val card: String, val ruins: Boolean,
     override fun broadcast(): Boolean = true
 }
 
-data class Score(val quest1: Int, val quest2: Int, val coins: Int, val monsters: Int)
+data class Score(val quest1: Int, val quest2: Int, val coins: Int, val monsters: Int, val season: Season)
 
-data class ScoresEvent(val scores: Map<String, Score>, override val type: EventType = EventType.SCORE) : Event {
+data class ScoresEvent(val score: Score, override val type: EventType = EventType.SCORE) : Event {
     override fun broadcast(): Boolean = true
 }
 
@@ -61,10 +67,16 @@ data class Results(val winner: String, override val type: EventType = EventType.
     override fun broadcast(): Boolean = true
 }
 
-data class ErrorEvent(val error: String, override val type: EventType = EventType.ERROR) : Event
+data class ErrorEvent(val error: ErrorCode, override val type: EventType = EventType.ERROR) : Event
 
 data class GoalsEvent(val spring: String, val summer: String, val autumn: String, val winter: String,
                       override val type: EventType = EventType.GOALS
 ) : Event {
     override fun broadcast(): Boolean = true
 }
+
+data class BoardElement(val x: Int, val y: Int, val terrain: Terrain)
+
+data class BoardEvent(val board: Set<BoardElement>, override val type: EventType = EventType.BOARD) : Event
+
+data class CoinsEvent(val coins: Int, override val type: EventType = EventType.COINS) : Event
