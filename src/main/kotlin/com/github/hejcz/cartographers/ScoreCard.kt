@@ -94,9 +94,7 @@ object MagesValley31 : ScoreCard {
         2 * board.all { it == Terrain.WATER }
             .count { lake -> board.adjacent(lake).any { board.terrainAt(it) == Terrain.MOUNTAIN } } +
                 board.all { it == Terrain.PLAINS }
-                    .count { plains ->
-                        board.adjacent(plains).any { board.terrainAt(it) == Terrain.MOUNTAIN }
-                    }
+                    .count { plains -> board.adjacent(plains).any { board.terrainAt(it) == Terrain.MOUNTAIN } }
 }
 
 object VastEnbankment33 : ScoreCard {
