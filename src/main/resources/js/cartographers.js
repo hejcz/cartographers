@@ -322,6 +322,8 @@ function drawCoins() {
         });
 }
 
+var boardInterval = undefined;
+
 function drawBoard() {
     const cells = rootSvg.select("#board")
         .selectAll(".cell")
@@ -384,7 +386,24 @@ function drawBoard() {
             .attr("x", `${cellSize*0.2}%`)
             .attr("y", `${cellSize*0.2}%`);
 
-    cells.merge(enter)
-        .style("fill-opacity", function (d) { return d.type == "EMPTY" || d.locked ? 1.0 : 0.7; })
-        .style("fill", function (d) { return `rgb(${colorByType[d.type]})` });
+    const cellsToAnimate = cells.merge(enter)
+        .style("fill", function (d) { return `rgb(${colorByType[d.type]})` })
+        .style("fill-opacity", 1)
+        .filter(d => !d.locked && d.type !== "EMPTY")
+
+    cellsToAnimate.interrupt();
+    if (boardInterval) {
+        boardInterval.stop();
+    }
+    boardInterval = d3.interval(() => {
+        cellsToAnimate.transition()
+            .ease(d3.easeLinear)
+            .duration(300)
+            .style("fill-opacity", 0.3)
+            .transition()
+            .ease(d3.easeLinear)
+            .duration(300)
+            .style("fill-opacity", 1);
+    }, 600);
+
 }
