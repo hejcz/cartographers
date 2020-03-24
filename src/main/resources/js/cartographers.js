@@ -14,6 +14,11 @@ const ws = new WebSocket(
     host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
 
 ws.onopen = function () {
+    setInterval(() => {
+        // ping heroku to avoid H15 idle connection error. For some reason ping from server 
+	// to client does not work with heroku.
+        ws.send(JSON.stringify({ "type": "ping"}));
+    }, 30);
     d3.select("#create").on("click", () => {
         const roomId = d3.select("#roomId").property("value");
         const nick = d3.select("#nick").property("value");
