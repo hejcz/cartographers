@@ -62,15 +62,9 @@ private fun monsters(): Set<MonsterCard> =
 private fun randomScoreCards(): List<ScoreCard> =
     listOf(
         setOf(GoldenBreadbasket32, FieldPuddle30, MagesValley31, VastEnbankment33).random(),
-        setOf(HugeCity35, Colony34, FertilePlain36).random(),
+        setOf(HugeCity35, Colony34, FertilePlain36, Fortress37).random(),
         setOf(ForestTower28, MountainWoods29, Coppice27, ForestGuard26).random(),
         setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random())
-// TODO unit test other score cards
-//    listOf(
-//        setOf(Colony34, HugeCity35, FertilePlain36, Fortress37).random(),
-//        setOf(FieldPuddle30, MagesValley31, GoldenBreadbasket32, VastEnbankment33).random(),
-//        setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random()
-//    )
 
 class GameImplementation(
     private val gameId: String = UUID.randomUUID().toString(),

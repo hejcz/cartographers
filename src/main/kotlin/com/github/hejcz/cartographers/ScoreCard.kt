@@ -67,7 +67,13 @@ object HugeCity35 : ScoreCard {
 
 object Fortress37 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        2 * (board.connectedTerrains(Terrain.CITY).drop(1).firstOrNull()?.size ?: 0)
+        board.connectedTerrains(Terrain.CITY).let {
+            when {
+                it.isEmpty() || it.size == 1 -> 0
+                else -> 2 *
+                        (it.sortedByDescending { cityCluster -> cityCluster.size }.drop(1).firstOrNull()?.size ?: 0)
+            }
+        }
 }
 
 object Colony34 : ScoreCard {
