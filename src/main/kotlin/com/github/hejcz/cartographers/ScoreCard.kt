@@ -104,23 +104,20 @@ object MagesValley31 : ScoreCard {
 
 object VastEnbankment33 : ScoreCard {
     override fun evaluate(board: Board): Int = 3 * (
-            board.connectedTerrains(Terrain.WATER).count { lake ->
-                val adjacent = lake.flatMap { board.adjacent(it) }.toSet()
-                if (adjacent.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
-                    false
-                } else {
-                    adjacent.none { board.terrainAt(it) != Terrain.PLAINS }
-                }
-            } +
-                    board.connectedTerrains(Terrain.PLAINS).count { lake ->
-                        val adjacent = lake.flatMap { board.adjacent(it) }.toSet()
-                        if (adjacent.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
-                            false
-                        } else {
-                            adjacent.none { board.terrainAt(it) != Terrain.WATER }
-                        }
+            listOf(
+                Terrain.WATER to Terrain.PLAINS,
+                Terrain.PLAINS to Terrain.WATER
+            ).sumBy { (terrain, forbidden) ->
+                board.connectedTerrains(terrain).count { points ->
+                    if (points.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
+                        false
+                    } else {
+                        val adjacent = points.flatMap { board.adjacent(it) }.toSet()
+                        adjacent.none { board.terrainAt(it) == forbidden }
                     }
-            )
+                }
+            }
+        )
 }
 
 object GoldenBreadbasket32 : ScoreCard {
