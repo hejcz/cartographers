@@ -1,7 +1,6 @@
 package com.github.hejcz.http
 
 import com.github.hejcz.cartographers.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
 
@@ -20,7 +19,7 @@ class Room(gid: String) {
                 game.canJoin(nick.nick) -> {
                     game = game.join(nick.nick)
                     callbacks[nick] = sendToSingle
-                    sendToSingle(game.recentEvents(nick.nick))
+                    sendEvents()
                     true
                 }
                 nick in callbacks -> {
@@ -37,7 +36,7 @@ class Room(gid: String) {
     fun start(nick: Nick) {
         synchronized(lock) {
             game = game.start(nick.nick)
-            handleEvents(nick)
+            sendEvents()
         }
     }
 
@@ -46,19 +45,14 @@ class Room(gid: String) {
         synchronized(lock) {
             game = game.draw(nick.nick, xyPoints, data.terrain)
             println(game)
-            println(game.boardOf(nick.nick))
-            handleEvents(nick)
+            sendEvents()
         }
     }
 
-    private fun handleEvents(nick: Nick) {
-        val events = game.recentEvents(nick.nick)
-        val (allPlayersEvents, otherEvents) = events.partition { it.broadcast() }
-        if (allPlayersEvents.isNotEmpty()) {
-            callbacks.forEach { it.value(allPlayersEvents.toSet()) }
-        }
-        if (otherEvents.isNotEmpty()) {
-            (callbacks.getValue(nick))(otherEvents.toSet())
+    private fun sendEvents() {
+        val events = game.recentEvents()
+        for ((n, event) in events) {
+            callbacks[Nick(n)]?.invoke(event)
         }
     }
 

@@ -153,7 +153,7 @@ class GameImplementation(
 
     override fun boardOf(nick: String): Board = player(nick)?.board!!
 
-    override fun recentEvents(nick: String): Set<Event> = recentEvents.of(nick)
+    override fun recentEvents(): Map<String, Set<Event>> = recentEvents.getAll()
 
     override fun leave(nick: String): Game {
         player(nick)?.left = true
@@ -301,7 +301,8 @@ class GameImplementation(
         players.map { it.nick to it.summaries.last().let { s: RoundSummary ->
             Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, Season.WINTER) } }
             .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
-        recentEvents.addAll(Results(players.maxBy { it.summaries.sumBy(RoundSummary::sum) }?.nick!!))
+        val (winner, totalScore) = players.map { it to it.summaries.sumBy(RoundSummary::sum) }.maxBy { it.second }!!
+        recentEvents.addAll(Results(winner.nick, totalScore))
         gameEnded = true
     }
 
@@ -317,7 +318,7 @@ interface Game {
     fun start(nick: String): Game
     fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game
     fun boardOf(nick: String): Board
-    fun recentEvents(nick: String): Set<Event>
     fun leave(nick: String): Game
     fun canJoin(nick: String): Boolean
+    fun recentEvents(): Map<String, Set<Event>>
 }
