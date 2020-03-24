@@ -23,9 +23,14 @@ object ForestTower28 : ScoreCard {
 
 object ForestGuard26 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        (0..10).count { board.terrainAt(Point(0, it)) == Terrain.FOREST } +
-                (0..10).count { board.terrainAt(Point(-10, it)) == Terrain.FOREST } +
+        // rows does not count first and last so it does not duplicate in total score
+        // first row
+        (1..9).count { board.terrainAt(Point(0, it)) == Terrain.FOREST } +
+                // last row
+                (1..9).count { board.terrainAt(Point(-10, it)) == Terrain.FOREST } +
+                // first column
                 (0..10).count { board.terrainAt(Point(-it, 0)) == Terrain.FOREST } +
+                // last column
                 (0..10).count { board.terrainAt(Point(-it, 10)) == Terrain.FOREST }
 }
 
