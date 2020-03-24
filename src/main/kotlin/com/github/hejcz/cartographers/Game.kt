@@ -63,7 +63,7 @@ private fun randomScoreCards(): List<ScoreCard> =
     listOf(
         setOf(GoldenBreadbasket32, FieldPuddle30).random(),
         setOf(HugeCity35, Colony34).random(),
-        setOf(ForestTower28, MountainWoods29).random(),
+        setOf(ForestTower28, MountainWoods29, Coppice27).random(),
         setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random())
 // TODO unit test other score cards
 //    listOf(
