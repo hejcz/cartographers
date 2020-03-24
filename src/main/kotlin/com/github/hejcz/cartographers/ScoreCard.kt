@@ -72,10 +72,11 @@ object Colony34 : ScoreCard {
 
 object FertilePlain36 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        board.connectedTerrains(Terrain.CITY).count { city ->
-            city.flatMap { board.adjacent(it) }.groupBy { board.terrainAt(it) }
+        3 * board.connectedTerrains(Terrain.CITY).count { city ->
+            city.flatMap { board.adjacent(it) }
+                .groupBy { board.terrainAt(it) }
                 .keys
-                .filter { it != Terrain.EMPTY }
+                .filter { it != Terrain.EMPTY && it != Terrain.CITY }
                 .count() >= 3
         }
 }
