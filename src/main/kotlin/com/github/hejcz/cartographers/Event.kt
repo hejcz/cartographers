@@ -54,7 +54,8 @@ interface Event {
 }
 
 data class AcceptedShape(val terrain: Terrain, val points: Collection<Point>, val totalCoins: Int,
-                         override val type: EventType = EventType.ACCEPTED_SHAPE) : Event
+                         override val type: EventType = EventType.ACCEPTED_SHAPE)
+    : Event
 
 data class NewCardEvent(val card: String, val ruins: Boolean,
     val currentTurnPoints: Int, val maxTurnPoints: Int, override val type: EventType = EventType.NEW_CARD) : Event

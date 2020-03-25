@@ -111,6 +111,7 @@ ws.onmessage = function (event) {
                 .remove();
         }
         if (event["type"] === "BOARD") {
+            updateBoard();
             event.board.forEach(cell => {
                 const {x, y, terrain} = cell;
                 const match = board.find(c => c.x === x && c.y === y);
@@ -119,7 +120,6 @@ ws.onmessage = function (event) {
                     match.locked = true;
                 }
             });
-            updateBoard();
             drawBoard();
         }
         if (event["type"] === "COINS") {
@@ -148,15 +148,17 @@ d3.select("#goals")
         gs.style("display", display === 'none' ? 'block' : 'none')
      });
 
-for (let x = 0; x <= 10; x++) {
-    for (let y = 0; y <= 10; y++) {
-        board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
-    }
-}
-
 updateBoard();
 
 function updateBoard() {
+    board = [];
+
+    for (let x = 0; x <= 10; x++) {
+        for (let y = 0; y <= 10; y++) {
+            board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
+        }
+    }
+
     for (const cell of board) {
         if (cell.x == -1 && cell.y == 5
             || cell.x == -2 && cell.y == 1
@@ -336,7 +338,7 @@ var boardInterval = undefined;
 function drawBoard() {
     const cells = rootSvg.select("#board")
         .selectAll(".cell")
-        .data(board);
+        .data(board, d => `${d.x} ${d.y}`);
 
     const cellSize = 100 / 11;
 
@@ -352,7 +354,11 @@ function drawBoard() {
         .attr("height", `${cellSize}%`)
         .style("stroke-width", "1px")
         .style("stroke", "grey")
-        .on("click", function (d) {
+        .on("click", function (data) {
+            // when board is modified d3 returns objects with same value
+            // but different identity to those in board array. To investigate
+            // how bind this data properly.
+            const d = board[-data.x * 11 + data.y];
             if (d.locked) {
                 return;
             }
@@ -373,7 +379,8 @@ function drawBoard() {
         .attr("height", `${cellSize*0.6}%`)
         .attr("x", `${cellSize*0.2}%`)
         .attr("y", `${cellSize*0.2}%`)
-        .on("click", function (d) {
+        .on("click", function (data) {
+            const d = board[-data.x * 11 + data.y];
             if (d.locked) {
                 return;
             }
@@ -387,13 +394,13 @@ function drawBoard() {
             drawBoard();
         });
 
-        const mountainImage = cellEnter.filter(d => d.type === "MOUNTAIN")
-            .append("image")
-            .attr("href", "/game/mountain.svg")
-            .attr("width", `${cellSize*0.6}%`)
-            .attr("height", `${cellSize*0.6}%`)
-            .attr("x", `${cellSize*0.2}%`)
-            .attr("y", `${cellSize*0.2}%`);
+    const mountainImage = cellEnter.filter(d => d.type === "MOUNTAIN")
+        .append("image")
+        .attr("href", "/game/mountain.svg")
+        .attr("width", `${cellSize*0.6}%`)
+        .attr("height", `${cellSize*0.6}%`)
+        .attr("x", `${cellSize*0.2}%`)
+        .attr("y", `${cellSize*0.2}%`);
 
     const cellsToAnimate = cells.merge(enter)
         .style("fill", function (d) { return `rgb(${colorByType[d.type]})` })
@@ -407,12 +414,12 @@ function drawBoard() {
     boardInterval = d3.interval(() => {
         cellsToAnimate.transition()
             .ease(d3.easeLinear)
-            .duration(300)
+            .duration(500)
             .style("fill-opacity", 0.3)
             .transition()
             .ease(d3.easeLinear)
-            .duration(300)
+            .duration(500)
             .style("fill-opacity", 1);
-    }, 600);
+    }, 1000);
 
 }

@@ -11,7 +11,11 @@ inline class Nick(val nick: String)
  */
 class Room(gid: String) {
     private var lock: Lock = ReentrantLock()
-    private var game: Game = GameImplementation(gid)
+    private var game: Game =
+        when {
+            gid.startsWith("monster") -> GameImplementation(gid, options = GameOptions(swapBoardsOnMonsters = true))
+            else -> GameImplementation(gid)
+        }
     private val callbacks: MutableMap<Nick, (Set<Event>) -> Unit> = mutableMapOf()
 
     fun join(nick: Nick, sendToSingle: (Set<Event>) -> Unit): Boolean = synchronized(lock) {
