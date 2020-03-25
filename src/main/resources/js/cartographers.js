@@ -16,9 +16,13 @@ const ws = new WebSocket(
 ws.onopen = function () {
     setInterval(() => {
         // ping heroku to avoid H15 idle connection error. For some reason ping from server 
-	// to client does not work with heroku.
+	    // to client does not work with heroku.
         ws.send(JSON.stringify({ "type": "ping"}));
-    }, 30);
+    }, 3000);
+    setInterval(() => {
+        // ping heroku to avoid dyno shut down
+        d3.request("/").get();
+    }, 1000 * 60 * 5);
     d3.select("#create").on("click", () => {
         const roomId = d3.select("#roomId").property("value");
         const nick = d3.select("#nick").property("value");
