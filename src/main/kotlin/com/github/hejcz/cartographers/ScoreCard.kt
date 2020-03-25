@@ -78,7 +78,7 @@ object Fortress37 : ScoreCard {
 
 object Colony34 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        6 * board.connectedTerrains(Terrain.CITY).filter { it.size >= 6 }.count()
+        8 * board.connectedTerrains(Terrain.CITY).filter { it.size >= 6 }.count()
 }
 
 object FertilePlain36 : ScoreCard {

@@ -683,7 +683,7 @@ class ScoreCardTest {
 """
             )
         )
-        Assertions.assertEquals(0 * 6, points)
+        Assertions.assertEquals(0 * 8, points)
     }
 
     @Test
@@ -705,7 +705,7 @@ class ScoreCardTest {
 """
             )
         )
-        Assertions.assertEquals(1 * 6, points)
+        Assertions.assertEquals(1 * 8, points)
     }
 
     @Test
@@ -727,7 +727,7 @@ class ScoreCardTest {
 """
             )
         )
-        Assertions.assertEquals(1 * 6, points)
+        Assertions.assertEquals(1 * 8, points)
     }
 
     @Test
@@ -749,7 +749,7 @@ class ScoreCardTest {
 """
             )
         )
-        Assertions.assertEquals(2 * 6, points)
+        Assertions.assertEquals(2 * 8, points)
     }
 
     @Test
@@ -771,7 +771,7 @@ class ScoreCardTest {
 """
             )
         )
-        Assertions.assertEquals(1 * 6, points)
+        Assertions.assertEquals(1 * 8, points)
     }
 
     @Test
