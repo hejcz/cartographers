@@ -44,7 +44,7 @@ class BasicStuffTest {
 [ ][C][ ][ ][ ][ ][ ][M][ ][C][ ]
 [C][ ][C][ ][ ][ ][ ][ ][ ][ ][C]
 """
-        Assertions.assertEquals(img, Board.create(img).toString())
+        Assertions.assertEquals(img, Board.create(img).prettyPrint())
     }
 
     @Test
@@ -74,7 +74,7 @@ class BasicStuffTest {
 
     @Test
     fun `test default board`() {
-        Assertions.assertEquals(Board.create().toString(), defaultMap)
+        Assertions.assertEquals(Board.create().prettyPrint(), defaultMap)
     }
 
     @Test
@@ -87,7 +87,7 @@ class BasicStuffTest {
             .start("julian")
             .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-6, 7)), Terrain.FOREST)
         Assertions.assertEquals(
-            game.boardOf("julian").toString(),
+            game.boardOf("julian").prettyPrint(),
             """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
@@ -115,7 +115,7 @@ class BasicStuffTest {
             .start("julian")
             .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-6, 7)), Terrain.CITY)
         Assertions.assertEquals(
-            game.boardOf("julian").toString(),
+            game.boardOf("julian").prettyPrint(),
             """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
@@ -143,7 +143,7 @@ class BasicStuffTest {
             .start("julian")
             .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-6, 7)), Terrain.WATER)
         Assertions.assertEquals(
-            game.boardOf("julian").toString(),
+            game.boardOf("julian").prettyPrint(),
             defaultMap,
             "shape was not added to board cause tree fortress accepts city and forest only"
         )
@@ -160,7 +160,7 @@ class BasicStuffTest {
             .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-7, 8)), Terrain.WATER)
         val board1 = game.boardOf("julian")
         Assertions.assertEquals(
-            board1.toString(),
+            board1.prettyPrint(),
             """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
@@ -177,8 +177,8 @@ class BasicStuffTest {
             "shape was not added to board"
         )
         Assertions.assertEquals(
-            board1.toString(),
-            game.draw("julian", setOf(Point(-7, 7), Point(-6, 6)), Terrain.FOREST).boardOf("julian").toString(),
+            board1.prettyPrint(),
+            game.draw("julian", setOf(Point(-7, 7), Point(-6, 6)), Terrain.FOREST).boardOf("julian").prettyPrint(),
             "shape was placed on another shape"
         )
         Assertions.assertEquals(
@@ -195,7 +195,7 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][W][M][ ][ ][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """,
-            game.draw("julian", setOf(Point(-6, 5), Point(-7, 6)), Terrain.FOREST).boardOf("julian").toString(),
+            game.draw("julian", setOf(Point(-6, 5), Point(-7, 6)), Terrain.FOREST).boardOf("julian").prettyPrint(),
             "shape was not added to board"
         )
     }
@@ -209,7 +209,7 @@ class BasicStuffTest {
             .join("julian")
             .start("julian")
         Assertions.assertNotEquals(
-            game.draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7)), Terrain.WATER).boardOf("julian").toString(),
+            game.draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7)), Terrain.WATER).boardOf("julian").prettyPrint(),
             """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
@@ -244,7 +244,7 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][W][W][M][ ][ ][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """,
-            game1.boardOf("julian").toString(),
+            game1.boardOf("julian").prettyPrint(),
             "shape was not added to board"
         )
         Assertions.assertEquals(
@@ -261,7 +261,7 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][W][W][M][ ][ ][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """,
-            game1.draw("julian", setOf(Point(-1, 0), Point(0, 1)), Terrain.FOREST).boardOf("julian").toString(),
+            game1.draw("julian", setOf(Point(-1, 0), Point(0, 1)), Terrain.FOREST).boardOf("julian").prettyPrint(),
             "next shape does not need to be on ruins"
         )
     }

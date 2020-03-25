@@ -18,6 +18,7 @@ interface Board {
     fun anyRuins(predicate: (Point) -> Boolean): Boolean
     fun isAnyPossibleContaining(point: Point, shapes: Set<Shape>): Boolean
     fun allPoints(): Set<BoardElement>
+    fun prettyPrint(): String
 
     companion object {
         fun create(): Board =
@@ -184,11 +185,19 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
     }
 
     override fun toString(): String =
+        (0 downTo -10).joinToString("-") { x ->
+            (0..10).joinToString("") { y ->
+                this.terrainAt(Point(x, y)).toString()
+            }
+        }
+
+    override fun prettyPrint(): String =
         "\n" + (0 downTo -10).joinToString("\n") { x ->
             (0..10).joinToString("") { y ->
                 this.terrainAt(Point(x, y)).toString()
             }
         } + "\n"
+
 
     companion object {
         val ruins = setOf(
