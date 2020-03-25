@@ -136,11 +136,11 @@ class GameImplementation(
 
     private fun scoreCardId(season: Season) = scoreCards.getValue(season)::class.java.simpleName.takeLast(2)
 
-    override fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game {
+    override fun draw(nick: String, points: Set<Point>, terrain: Terrain): Game {
         when {
             !started -> recentEvents.add(nick, ErrorEvent(ErrorCode.GAME_NOT_STARTED_YET))
             gameEnded -> recentEvents.add(nick, ErrorEvent(ErrorCode.GAME_FINISHED))
-            else -> update(nick, Shape.create(points.map { (x, y) -> Point(x, y) }.toSet()), terrain)
+            else -> update(nick, Shape.create(points), terrain)
         }
         return this
     }
@@ -312,7 +312,7 @@ class GameImplementation(
 interface Game {
     fun join(nick: String): Game
     fun start(nick: String): Game
-    fun draw(nick: String, points: Set<Pair<Int, Int>>, terrain: Terrain): Game
+    fun draw(nick: String, points: Set<Point>, terrain: Terrain): Game
     fun boardOf(nick: String): Board
     fun leave(nick: String): Game
     fun canJoin(nick: String): Boolean

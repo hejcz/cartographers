@@ -41,9 +41,9 @@ class Room(gid: String) {
     }
 
     fun draw(nick: Nick, data: DrawData) {
-        val xyPoints = data.points.map { it.x to it.y }.toSet()
+        val points = data.points.toSet()
         synchronized(lock) {
-            game = game.draw(nick.nick, xyPoints, data.terrain)
+            game = game.draw(nick.nick, points, data.terrain)
             println(game)
             sendEvents()
         }

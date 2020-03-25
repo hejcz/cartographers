@@ -85,7 +85,7 @@ class BasicStuffTest {
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
-            .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.FOREST)
+            .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-6, 7)), Terrain.FOREST)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
             """
@@ -113,7 +113,7 @@ class BasicStuffTest {
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
-            .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.CITY)
+            .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-6, 7)), Terrain.CITY)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
             """
@@ -141,7 +141,7 @@ class BasicStuffTest {
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
-            .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -6 to 7), Terrain.WATER)
+            .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-6, 7)), Terrain.WATER)
         Assertions.assertEquals(
             game.boardOf("julian").toString(),
             defaultMap,
@@ -157,7 +157,7 @@ class BasicStuffTest {
         ) { cards -> cards } as Game)
             .join("julian")
             .start("julian")
-            .draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7, -7 to 8), Terrain.WATER)
+            .draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7), Point(-7, 8)), Terrain.WATER)
         val board1 = game.boardOf("julian")
         Assertions.assertEquals(
             board1.toString(),
@@ -178,7 +178,7 @@ class BasicStuffTest {
         )
         Assertions.assertEquals(
             board1.toString(),
-            game.draw("julian", setOf(-7 to 7, -6 to 6), Terrain.FOREST).boardOf("julian").toString(),
+            game.draw("julian", setOf(Point(-7, 7), Point(-6, 6)), Terrain.FOREST).boardOf("julian").toString(),
             "shape was placed on another shape"
         )
         Assertions.assertEquals(
@@ -195,7 +195,7 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][ ][W][M][ ][ ][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """,
-            game.draw("julian", setOf(-6 to 5, -7 to 6), Terrain.FOREST).boardOf("julian").toString(),
+            game.draw("julian", setOf(Point(-6, 5), Point(-7, 6)), Terrain.FOREST).boardOf("julian").toString(),
             "shape was not added to board"
         )
     }
@@ -209,7 +209,7 @@ class BasicStuffTest {
             .join("julian")
             .start("julian")
         Assertions.assertNotEquals(
-            game.draw("julian", setOf(-9 to 6, -8 to 6, -8 to 7, -7 to 7), Terrain.WATER).boardOf("julian").toString(),
+            game.draw("julian", setOf(Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7)), Terrain.WATER).boardOf("julian").toString(),
             """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 [ ][ ][ ][M][ ][ ][ ][ ][ ][ ][ ]
@@ -225,7 +225,11 @@ class BasicStuffTest {
 """,
             "shape was not added on ruins even though ruins were forced"
         )
-        val game1 = game.draw("julian", setOf(-9 to 5, -9 to 6, -8 to 6, -8 to 7, -7 to 7), Terrain.WATER)
+        val game1 = game.draw(
+            "julian",
+            setOf(Point(-9, 5), Point(-9, 6), Point(-8, 6), Point(-8, 7), Point(-7, 7)),
+            Terrain.WATER
+        )
         Assertions.assertEquals(
             """
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
@@ -257,7 +261,7 @@ class BasicStuffTest {
 [ ][ ][ ][ ][ ][W][W][M][ ][ ][ ]
 [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 """,
-            game1.draw("julian", setOf(-1 to 0, 0 to 1), Terrain.FOREST).boardOf("julian").toString(),
+            game1.draw("julian", setOf(Point(-1, 0), Point(0, 1)), Terrain.FOREST).boardOf("julian").toString(),
             "next shape does not need to be on ruins"
         )
     }
