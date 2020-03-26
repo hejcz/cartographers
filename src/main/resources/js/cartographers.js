@@ -6,6 +6,8 @@ const scores = [emptyArray, emptyArray, emptyArray, emptyArray];
 let nick = undefined;
 let board = [];
 
+const drawableTerrains = ["FOREST", "WATER", "PLAINS", "CITY", "MONSTER"]
+
 const host = window.location.hostname;
 const port = window.location.port;
 let canPing = false;
@@ -185,7 +187,7 @@ function updateBoard() {
 function updateTerrains(terrains) {
     const terrainUpdate = d3.select("#current-card .terrain")
         .selectAll("rect")
-        .data(terrains);
+        .data(drawableTerrains);
 
     const terrainEnter = terrainUpdate.enter()
         .append("rect")
@@ -197,6 +199,7 @@ function updateTerrains(terrains) {
     terrainUpdate.merge(terrainEnter)
         .attr("transform", function (d, i) { return `translate(${i * 35} 0)`; })
         .style("fill", function (d) { return `rgb(${colorByType[d]})` })
+        .style("fill-opacity", d => terrains.indexOf(d) == -1 ? 0.1 : 1)
         .on("click", function (d) {
             currentTerrain = d;
             [...points].filter(it => !it.locked).forEach(it => { it.type = "EMPTY"; });
