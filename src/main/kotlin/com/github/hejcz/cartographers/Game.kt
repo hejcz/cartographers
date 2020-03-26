@@ -164,9 +164,11 @@ class GameImplementation(
     private fun scoreCardId(season: Season) = scoreCards.getValue(season)::class.java.simpleName.takeLast(2)
 
     override fun draw(nick: String, points: Set<Point>, terrain: Terrain): Game {
+        recentEvents.clear()
         when {
             !started -> recentEvents.add(nick, ErrorEvent(ErrorCode.GAME_NOT_STARTED_YET))
             gameEnded -> recentEvents.add(nick, ErrorEvent(ErrorCode.GAME_FINISHED))
+            nick in playersDone -> recentEvents.add(nick, ErrorEvent(ErrorCode.CANT_DRAW_TWICE))
             else -> update(nick, Shape.create(points), terrain)
         }
         return this
@@ -210,11 +212,6 @@ class GameImplementation(
     }
 
     private fun update(nick: String, shape: Shape, terrain: Terrain) {
-        if (nick in playersDone) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.CANT_DRAW_TWICE))
-            return
-        }
-        recentEvents.clear()
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
         val currentCard = deck[currentCardIndex]
 
@@ -222,34 +219,12 @@ class GameImplementation(
             !monsterDrawn -> player
             else -> playerMatching(player)
         }
+
         val board = boardOwner.board
 
-        if (shape.isEmpty()) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.EMPTY_SHAPE))
-            return
-        }
-
-        val is1x1SpecialCase = shape.size() == 1 &&
-                (ruinsPicked && !board.canDrawShapeOnRuins(currentCard.availableShapes())
-                        || board.noPlaceToDraw(currentCard.availableShapes()))
-
-        if (!is1x1SpecialCase) {
-            if (!currentCard.isValid(shape)) {
-                recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_SHAPE))
-                return
-            }
-            if (!currentCard.isValid(terrain)) {
-                recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_TERRAIN_TYPE))
-                return
-            }
-            if (ruinsPicked && !shape.anyMatches { board.hasRuinsOn(it) }) {
-                // corner case - some ruins are free but shape cant be drawn on them
-                recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_MUST_BE_ON_RUINS))
-                return
-            }
-        }
-        if (board.isAnyOutsideTheMapOrTaken(shape.toPoints())) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_OUTSIDE_THE_MAP_OR_OVERLAPING))
+        val error = validate(shape, board, currentCard, terrain)
+        if (error != null) {
+            recentEvents.add(nick, ErrorEvent(error))
             return
         }
 
@@ -304,6 +279,35 @@ class GameImplementation(
                 )
             }
         }
+    }
+
+    private fun validate(shape: Shape, board: Board,
+            currentCard: Card, terrain: Terrain): ErrorCode? {
+        if (shape.isEmpty()) {
+            return ErrorCode.EMPTY_SHAPE
+        }
+
+        if (shape.anyMatches { board.terrainAt(it) == Terrain.OUTSIDE_THE_MAP }) {
+            return ErrorCode.SHAPE_OUTSIDE_THE_MAP_OR_OVERLAPING
+        }
+
+        val is1x1SpecialCase = shape.size() == 1 &&
+                (ruinsPicked && !board.canDrawShapeOnRuins(currentCard.availableShapes())
+                        || board.noPlaceToDraw(currentCard.availableShapes()))
+
+        if (!is1x1SpecialCase) {
+            if (!currentCard.isValid(shape)) {
+                return ErrorCode.INVALID_SHAPE
+            }
+            if (!currentCard.isValid(terrain)) {
+                return ErrorCode.INVALID_TERRAIN_TYPE
+            }
+            if (ruinsPicked && !shape.anyMatches { board.hasRuinsOn(it) }) {
+                return ErrorCode.SHAPE_MUST_BE_ON_RUINS
+            }
+        }
+
+        return null
     }
 
     private fun playerMatching(player: Player): Player {
