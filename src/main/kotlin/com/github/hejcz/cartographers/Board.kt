@@ -19,6 +19,8 @@ interface Board {
     fun isAnyPossibleContaining(point: Point, shapes: Set<Shape>): Boolean
     fun allPoints(): Set<BoardElement>
     fun prettyPrint(): String
+    fun isAnyOutsideTheMapOrTaken(points: Set<Point>): Boolean
+    fun canDrawShapeOnRuins(shapes: Set<Shape>): Boolean
 
     companion object {
         fun create(): Board =
@@ -198,6 +200,14 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
             }
         } + "\n"
 
+    override fun isAnyOutsideTheMapOrTaken(points: Set<Point>) = points.any {
+        val terrain = terrainAt(it)
+        terrain != Terrain.EMPTY
+    }
+
+    override fun canDrawShapeOnRuins(shapes: Set<Shape>): Boolean = anyRuins {
+        terrainAt(it) == Terrain.EMPTY && isAnyPossibleContaining(it, shapes)
+    }
 
     companion object {
         val ruins = setOf(

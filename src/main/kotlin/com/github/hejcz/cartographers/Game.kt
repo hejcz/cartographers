@@ -75,8 +75,8 @@ class GameImplementation(
         listOf(Season.SPRING, Season.SUMMER, Season.AUTUMN, Season.WINTER)
             .zip(randomScoreCards().shuffled()) { season, card -> season to card }
             .toMap(),
-    private val shuffler: (List<Card>) -> List<Card> = { cards -> cards.shuffled() },
-    private val options: GameOptions = GameOptions()
+    private val options: GameOptions = GameOptions(),
+    private val shuffler: (List<Card>) -> List<Card> = { cards -> cards.shuffled() }
 ) : Game {
     private var season: Season = Season.SPRING
     private var currentCardIndex: Int = 0
@@ -224,34 +224,32 @@ class GameImplementation(
         }
         val board = boardOwner.board
 
-        val isOneOnOneSpecialCase = shape.size() == 1 && board.noPlaceToDraw(currentCard.availableShapes())
-        if (shape.toPoints().isEmpty()) {
+        if (shape.isEmpty()) {
             recentEvents.add(nick, ErrorEvent(ErrorCode.EMPTY_SHAPE))
             return
         }
-        if (!currentCard.isValid(shape) && !isOneOnOneSpecialCase) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_SHAPE))
-            return
+
+        val is1x1SpecialCase = shape.size() == 1 &&
+                (ruinsPicked && !board.canDrawShapeOnRuins(currentCard.availableShapes())
+                        || board.noPlaceToDraw(currentCard.availableShapes()))
+
+        if (!is1x1SpecialCase) {
+            if (!currentCard.isValid(shape)) {
+                recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_SHAPE))
+                return
+            }
+            if (!currentCard.isValid(terrain)) {
+                recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_TERRAIN_TYPE))
+                return
+            }
+            if (ruinsPicked && !shape.anyMatches { board.hasRuinsOn(it) }) {
+                // corner case - some ruins are free but shape cant be drawn on them
+                recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_MUST_BE_ON_RUINS))
+                return
+            }
         }
-        if (!currentCard.isValid(terrain)) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.INVALID_TERRAIN_TYPE))
-            return
-        }
-        if (shape.anyMatches { board.terrainAt(it) == Terrain.OUTSIDE_THE_MAP }) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_OUTSIDE_THE_MAP))
-            return
-        }
-        if (shape.anyMatches { board.terrainAt(it) != Terrain.EMPTY }) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPES_CANT_OVERLAP))
-            return
-        }
-        if (ruinsPicked && !shape.anyMatches { board.hasRuinsOn(it) }
-            && board.anyRuins {
-                board.terrainAt(it) == Terrain.EMPTY
-                        && board.isAnyPossibleContaining(it, currentCard.availableShapes())
-            }) {
-            // corner case - some ruins are free but shape cant be drawn on them
-            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_MUST_BE_ON_RUINS))
+        if (board.isAnyOutsideTheMapOrTaken(shape.toPoints())) {
+            recentEvents.add(nick, ErrorEvent(ErrorCode.SHAPE_OUTSIDE_THE_MAP_OR_OVERLAPING))
             return
         }
 

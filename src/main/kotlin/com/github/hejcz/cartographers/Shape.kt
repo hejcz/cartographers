@@ -7,6 +7,7 @@ interface Shape {
     fun normalize(): Shape
     fun size(): Int
     fun allVersionsContaining(point: Point): Sequence<Shape>
+    fun isEmpty(): Boolean
 
     companion object {
         fun create(points: Set<Point>): Shape =
@@ -60,6 +61,8 @@ data class PointGroupShape(
             val yShift = point.y - y
             PointGroupShape(points.map { (x, y) -> Point(x + xShift, y + yShift) }.toSet())
         }
+
+    override fun isEmpty(): Boolean = points.isEmpty()
 
     companion object {
         private fun moveTopLeftToZeroZero(positions: Collection<Point>): Shape {
