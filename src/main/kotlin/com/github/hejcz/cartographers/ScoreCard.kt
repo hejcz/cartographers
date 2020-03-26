@@ -44,17 +44,14 @@ object MountainWoods29 : ScoreCard {
     override fun evaluate(board: Board): Int {
         val mountains = board.all { it == Terrain.MOUNTAIN }
         val connectedForests = board.connectedTerrains(Terrain.FOREST)
-        val mountainsPairs = mountains.flatMap { mountain1 -> mountains.map { mountain1 to it } }
-            .filter { (m1, m2) -> m1 != m2 && (m1.x > m2.x || m1.x == m2.x && m1.y > m2.y)  }
-        return 3 * mountainsPairs.filter { (m1, m2) ->
-            val m1Adjacent = board.adjacent(m1)
-            val m2Adjacent = board.adjacent(m2)
-            connectedForests.any { m1Adjacent.any(it::contains) && m2Adjacent.any(it::contains) }
+        return 3 * mountains.count { m1 ->
+            mountains.filter { it != m1 }
+                .any { m2 ->
+                    val m1Adjacent = board.adjacent(m1)
+                    val m2Adjacent = board.adjacent(m2)
+                    connectedForests.any { m1Adjacent.any(it::contains) && m2Adjacent.any(it::contains) }
+                }
         }
-            // if m1 is connected to m2 and m2 to m3 we don't want to count pairs but mountain connected to another
-            .flatMap { setOf(it.first, it.second) }
-            .distinct()
-            .count()
     }
 }
 
