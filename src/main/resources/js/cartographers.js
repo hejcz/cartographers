@@ -4,7 +4,15 @@ let coinsCount = 0;
 const emptyArray = [];
 const scores = [emptyArray, emptyArray, emptyArray, emptyArray];
 let nick = undefined;
+
+// create initial board. it's gonna be mutated in the future so
+// d3 does not have problems with pointing to old elements.
 let board = [];
+for (let x = 0; x <= 10; x++) {
+    for (let y = 0; y <= 10; y++) {
+        board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
+    }
+}
 
 const drawableTerrains = ["FOREST", "WATER", "PLAINS", "CITY", "MONSTER"]
 
@@ -113,7 +121,7 @@ ws.onmessage = function (event) {
                 .remove();
         }
         if (event["type"] === "BOARD") {
-            updateBoard();
+            resetBoard();
             event.board.forEach(cell => {
                 const {x, y, terrain} = cell;
                 const match = board.find(c => c.x === x && c.y === y);
@@ -150,15 +158,12 @@ d3.select("#goals")
         gs.style("display", display === 'none' ? 'block' : 'none')
      });
 
-updateBoard();
+resetBoard();
 
-function updateBoard() {
-    board = [];
-
-    for (let x = 0; x <= 10; x++) {
-        for (let y = 0; y <= 10; y++) {
-            board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
-        }
+function resetBoard() {
+    for (let cell of board) {
+        cell.type = 'EMPTY';
+        cell.locked = false;
     }
 
     for (const cell of board) {
@@ -357,11 +362,7 @@ function drawBoard() {
         .attr("height", `${cellSize}%`)
         .style("stroke-width", "1px")
         .style("stroke", "grey")
-        .on("click", function (data) {
-            // when board is modified d3 returns objects with same value
-            // but different identity to those in board array. To investigate
-            // how bind this data properly.
-            const d = board[-data.x * 11 + data.y];
+        .on("click", function (d) {
             if (d.locked) {
                 return;
             }
@@ -382,8 +383,7 @@ function drawBoard() {
         .attr("height", `${cellSize*0.6}%`)
         .attr("x", `${cellSize*0.2}%`)
         .attr("y", `${cellSize*0.2}%`)
-        .on("click", function (data) {
-            const d = board[-data.x * 11 + data.y];
+        .on("click", function (d) {
             if (d.locked) {
                 return;
             }
