@@ -5,39 +5,21 @@ interface ScoreCard {
 }
 
 object ForestTower28 : ScoreCard {
-    override fun evaluate(board: Board): Int {
-        val forests = board.all { it == Terrain.FOREST }
-        return forests.fold(0) { total, p ->
-            when {
-                p.x < 0 && board.terrainAt(p.moveX(-1)) == Terrain.EMPTY ||
-                        p.x > -10 && board.terrainAt(p.moveX(1)) == Terrain.EMPTY ||
-                        p.y > 0 && board.terrainAt(p.moveY(-1)) == Terrain.EMPTY ||
-                        p.y < 10 && board.terrainAt(p.moveY(1)) == Terrain.EMPTY -> {
-                    total
-                }
-                else -> total + 1
-            }
-        }
-    }
+    override fun evaluate(board: Board): Int = board
+        .all { it == Terrain.FOREST }
+        .count { p -> board.adjacent(p).all { board.terrainAt(it) != Terrain.EMPTY } }
 }
 
 object ForestGuard26 : ScoreCard {
-    override fun evaluate(board: Board): Int =
-        // rows does not count first and last so it does not duplicate in total score
-        // first row
-        (1..9).count { board.terrainAt(Point(0, it)) == Terrain.FOREST } +
-                // last row
-                (1..9).count { board.terrainAt(Point(-10, it)) == Terrain.FOREST } +
-                // first column
-                (0..10).count { board.terrainAt(Point(-it, 0)) == Terrain.FOREST } +
-                // last column
-                (0..10).count { board.terrainAt(Point(-it, 10)) == Terrain.FOREST }
+    override fun evaluate(board: Board): Int = board
+        .all { it == Terrain.FOREST }
+        .count { board.isOnBorder(it) }
 }
 
 object Coppice27 : ScoreCard {
-    override fun evaluate(board: Board): Int =
-        (0..10).count { row -> (0..10).any { board.terrainAt(Point(-row, it)) == Terrain.FOREST } } +
-                (0..10).count { col -> (0..10).any { board.terrainAt(Point(-it, col)) == Terrain.FOREST } }
+    override fun evaluate(board: Board): Int = board
+        .all { it == Terrain.FOREST }
+        .let { forest -> forest.distinctBy { it.x }.size + forest.distinctBy { it.y }.size }
 }
 
 object MountainWoods29 : ScoreCard {
@@ -57,9 +39,9 @@ object MountainWoods29 : ScoreCard {
 
 object HugeCity35 : ScoreCard {
     override fun evaluate(board: Board): Int =
-        board.connectedTerrains(Terrain.CITY).filter { city ->
-            city.flatMap { board.adjacent(it) }.toSet().all { board.terrainAt(it) != Terrain.MOUNTAIN }
-        }.maxBy { it.size }?.size ?: 0
+        board.connectedTerrains(Terrain.CITY)
+            .filter { city -> city.all { board.adjacent(it).all { p -> board.terrainAt(p) != Terrain.MOUNTAIN } } }
+            .maxBy { it.size }?.size ?: 0
 }
 
 object Fortress37 : ScoreCard {
@@ -68,7 +50,7 @@ object Fortress37 : ScoreCard {
             when {
                 it.isEmpty() || it.size == 1 -> 0
                 else -> 2 *
-                        (it.sortedByDescending { cityCluster -> cityCluster.size }.drop(1).firstOrNull()?.size ?: 0)
+                        (it.sortedByDescending { cluster -> cluster.size }.drop(1).firstOrNull()?.size ?: 0)
             }
         }
 }
@@ -112,7 +94,7 @@ object VastEnbankment33 : ScoreCard {
                 Terrain.PLAINS to Terrain.WATER
             ).sumBy { (terrain, forbidden) ->
                 board.connectedTerrains(terrain).count { points ->
-                    if (points.any { (x, y) -> x == 0 || x == -10 || y == 0 || y == 10 }) {
+                    if (points.any { board.isOnBorder(it) }) {
                         false
                     } else {
                         val adjacent = points.flatMap { board.adjacent(it) }.toSet()
@@ -133,17 +115,7 @@ object GoldenBreadbasket32 : ScoreCard {
 
 object Hideouts41 : ScoreCard {
     override fun evaluate(board: Board): Int = board.allEmpty()
-        .fold(0) { total, p ->
-            when {
-                p.x < 0 && board.terrainAt(p.moveX(-1)) == Terrain.EMPTY ||
-                        p.x > -10 && board.terrainAt(p.moveX(1)) == Terrain.EMPTY ||
-                        p.y > 0 && board.terrainAt(p.moveY(-1)) == Terrain.EMPTY ||
-                        p.y < 10 && board.terrainAt(p.moveY(1)) == Terrain.EMPTY -> {
-                    total
-                }
-                else -> total + 1
-            }
-        }
+        .count { p -> board.adjacent(p).all { board.terrainAt(it) != Terrain.EMPTY } }
 }
 
 object LostDemesne39 : ScoreCard {

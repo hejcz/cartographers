@@ -323,10 +323,10 @@ class GameImplementation(
     }
 
     private fun countMountainsClosedWith(shape: Shape, board: Board): Int = shape.toPoints()
-        .flatMap { it.adjacent(-10, 0, 0, 10) }
+        .flatMap { board.adjacent(it) }
         .distinct()
         .filter { board.terrainAt(it) == Terrain.MOUNTAIN }
-        .count { mountain -> mountain.adjacent(-10, 0, 0, 10).all { board.terrainAt(it) != Terrain.EMPTY } }
+        .count { mountain -> board.adjacent(mountain).all { board.terrainAt(it) != Terrain.EMPTY } }
 
     private fun calculateScore() {
         val quest1 = scoreCards.getValue(season)

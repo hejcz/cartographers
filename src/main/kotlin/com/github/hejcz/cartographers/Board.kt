@@ -21,6 +21,7 @@ interface Board {
     fun prettyPrint(): String
     fun isAnyOutsideTheMapOrTaken(points: Set<Point>): Boolean
     fun canDrawShapeOnRuins(shapes: Set<Shape>): Boolean
+    fun isOnBorder(point: Point): Boolean
 
     companion object {
         fun create(): Board =
@@ -208,6 +209,9 @@ class MapBoard(private val board: Map<Point, Terrain>) : Board {
     override fun canDrawShapeOnRuins(shapes: Set<Shape>): Boolean = anyRuins {
         terrainAt(it) == Terrain.EMPTY && isAnyPossibleContaining(it, shapes)
     }
+
+    override fun isOnBorder(point: Point): Boolean =
+        point.x == 0 || point.x == -10 || point.y == 0 || point.y == 10
 
     companion object {
         val ruins = setOf(
