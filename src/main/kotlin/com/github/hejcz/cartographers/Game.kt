@@ -2,71 +2,6 @@ package com.github.hejcz.cartographers
 
 import java.util.*
 
-data class RoundSummary(
-    val quest1Points: Int,
-    val quest2Points: Int,
-    val coinsPoints: Int,
-    val monstersPenalty: Int
-) {
-    fun sum(): Int = quest1Points + quest2Points + coinsPoints - monstersPenalty
-}
-
-class Player(val nick: String) {
-    var left: Boolean = false
-    var board: Board = Board.create()
-    var coins = 0
-    var summaries = listOf<RoundSummary>()
-
-    override fun toString(): String = "Player(nick='$nick', board=$board, coins=$coins, summaries=$summaries)"
-}
-
-enum class Season(val pointsInRound: Int) {
-    SPRING(8),
-    SUMMER(8),
-    AUTUMN(7),
-    WINTER(6);
-
-    companion object {
-        fun byIndex(index: Int): Season = when (index) {
-            0 -> SPRING
-            1 -> SUMMER
-            2 -> AUTUMN
-            3 -> WINTER
-            else -> throw RuntimeException("Illegal index for season $index")
-        }
-    }
-}
-
-fun Season.next(): Season {
-    return when (this) {
-        Season.SPRING -> Season.SUMMER
-        Season.SUMMER -> Season.AUTUMN
-        Season.AUTUMN -> Season.WINTER
-        Season.WINTER -> Season.SPRING
-    }
-}
-
-fun Board.countMonsterPoints(): Int = all { it == Terrain.MONSTER }
-    .flatMap { xy -> adjacent(xy) }
-    .toSet()
-    .count { terrainAt(it) == Terrain.EMPTY }
-
-private fun cards() = listOf(
-    Ruins05, Ruins06, BigRiver07, Fields08, City09, ForgottenForest10, RuralStream11,
-    Farm12, Orchard13, TreeFortress14, Fends15, FishermanVillage16, Cracks17
-)
-
-private fun monsters(): Set<MonsterCard> =
-    setOf(GoblinsAttack01, BogeymanAssault02, CoboldsCharge03, GnollsInvasion04)
-
-private fun randomScoreCards(): List<ScoreCard> =
-    listOf(
-        setOf(GoldenBreadbasket32, FieldPuddle30, MagesValley31, VastEnbankment33).random(),
-        setOf(HugeCity35, Colony34, FertilePlain36, Fortress37).random(),
-        setOf(ForestTower28, MountainWoods29, Coppice27, ForestGuard26).random(),
-        setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random()
-    )
-
 class GameImplementation(
     private val gameId: String = UUID.randomUUID().toString(),
     private var deck: List<Card> = cards().shuffled(),
@@ -111,24 +46,11 @@ class GameImplementation(
         val player = player(nick)!!
         (setOf(
             newCardEvent(),
-            GoalsEvent(
-                scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
-                scoreCardId(Season.WINTER)
-            ),
+            goalsEvent(),
             BoardEvent(player.board.allPoints()),
             CoinsEvent(player.coins)
         ) + player.summaries
-            .mapIndexed { index, it ->
-                ScoresEvent(
-                    Score(
-                        it.quest1Points,
-                        it.quest2Points,
-                        it.coinsPoints,
-                        it.monstersPenalty,
-                        Season.byIndex(index)
-                    )
-                )
-            })
+            .mapIndexed { index, it -> ScoresEvent(toScore(it, Season.byIndex(index))) })
             .forEach { recentEvents.add(player.nick, it) }
     }
 
@@ -143,15 +65,10 @@ class GameImplementation(
         onNextCard()
         recentEvents.addAll(
             newCardEvent(),
-            GoalsEvent(
-                scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
-                scoreCardId(Season.WINTER)
-            )
+            goalsEvent()
         )
         return this
     }
-
-    private fun scoreCardId(season: Season) = scoreCards.getValue(season)::class.java.simpleName.takeLast(2)
 
     override fun draw(nick: String, points: Set<Point>, terrain: Terrain): Game {
         recentEvents.clear()
@@ -164,41 +81,9 @@ class GameImplementation(
         return this
     }
 
-    private fun player(nick: String) = players.find { it.nick == nick }
-
-    override fun boardOf(nick: String): Board = player(nick)?.board!!
-
-    override fun recentEvents(): Map<String, Set<Event>> = recentEvents.getAll()
-
     override fun leave(nick: String): Game {
         player(nick)?.left = true
         return this
-    }
-
-    private fun cleanBeforeNextTurn() {
-        if (monstersDeck.isNotEmpty()) {
-            val monsterCard = monstersDeck.random()
-            monstersDeck = monstersDeck - monsterCard
-            deck = deck + monsterCard
-        }
-        deck = shuffler(deck)
-        currentCardIndex = 0
-        pointsInRound = 0
-        playersDone.clear()
-        ruinsPicked = false
-        monsterDrawn = false
-    }
-
-    private fun cleanBeforeNextCard() {
-        if (deck[currentCardIndex] is MonsterCard) {
-            deck = deck - deck[currentCardIndex]
-            players.forEach { recentEvents.add(it.nick, BoardEvent(it.board.allPoints())) }
-        } else {
-            currentCardIndex += 1
-        }
-        playersDone.clear()
-        ruinsPicked = if (monsterDrawn) ruinsPicked else false
-        monsterDrawn = false
     }
 
     // ruins card does not affect monsters
@@ -209,8 +94,8 @@ class GameImplementation(
         val currentCard = deck[currentCardIndex]
 
         val boardOwner = when {
-            !monsterDrawn -> player
-            else -> playerMatching(player)
+            monsterDrawn -> playerMatching(player)
+            else -> player
         }
 
         val board = boardOwner.board
@@ -232,41 +117,33 @@ class GameImplementation(
 
         recentEvents.add(nick, AcceptedShape(terrain, shape.toPoints().map { (x, y) -> Point(x, y) }, player.coins))
 
-        if (players.size == playersDone.size) {
-            pointsInRound += deck[currentCardIndex].points()
-            if (season.pointsInRound <= pointsInRound) {
-                if (season == Season.WINTER) {
-                    calculateScore()
-                    season = season.next()
-                    endGame()
-                    return
-                }
-                cleanBeforeNextTurn()
-                calculateScore()
-                players.map {
-                    it.nick to it.summaries.last().let { s: RoundSummary ->
-                        Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, season)
-                    }
-                }
-                    .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
-                season = season.next()
-                onNextCard()
-                recentEvents.addAll(newCardEvent())
-            } else {
-                cleanBeforeNextCard()
-                onNextCard()
-                recentEvents.addAll(newCardEvent())
-            }
+        if (players.size != playersDone.size) {
+            return
         }
-    }
 
-    private fun newCardEvent(): NewCardEvent {
-        return NewCardEvent(
-            deck[currentCardIndex].number(),
-            shouldDrawOnRuins(),
-            pointsInRound + deck[currentCardIndex].points(),
-            season.pointsInRound
-        )
+        pointsInRound += deck[currentCardIndex].points()
+
+        if (season.pointsInRound > pointsInRound) {
+            cleanBeforeNextCard()
+            onNextCard()
+            recentEvents.addAll(newCardEvent())
+            return
+        }
+
+        if (season != Season.WINTER) {
+            cleanBeforeNextTurn()
+            calculateScore()
+            players.map { it.nick to toScore(it.summaries.last(), season) }
+                .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
+            season = season.next()
+            onNextCard()
+            recentEvents.addAll(newCardEvent())
+            return
+        }
+
+        calculateScore()
+        season = season.next()
+        endGame()
     }
 
     private fun validate(shape: Shape, board: Board,
@@ -304,19 +181,39 @@ class GameImplementation(
         return null
     }
 
-    private fun playerMatching(player: Player): Player {
-        if (!monsterDrawn) {
-            throw RuntimeException("Don't call player matching when monster is not drawn")
+    private fun cleanBeforeNextTurn() {
+        if (monstersDeck.isNotEmpty()) {
+            val monsterCard = monstersDeck.random()
+            monstersDeck = monstersDeck - monsterCard
+            deck = deck + monsterCard
         }
-        return if (players.size == 1) {
-            player
-        } else {
-            val idx = players.indexOf(player)
+        deck = shuffler(deck)
+        currentCardIndex = 0
+        pointsInRound = 0
+        playersDone.clear()
+        ruinsPicked = false
+        monsterDrawn = false
+    }
 
-            when ((deck[currentCardIndex] as MonsterCard).direction()) {
-                Direction.CLOCKWISE -> players[(idx + 1) % players.size]
-                Direction.COUNTERCLOCKWISE -> players[ if (idx == 0) players.size - 1 else idx - 1]
-            }
+    private fun cleanBeforeNextCard() {
+        if (deck[currentCardIndex] is MonsterCard) {
+            deck = deck - deck[currentCardIndex]
+            players.forEach { recentEvents.add(it.nick, BoardEvent(it.board.allPoints())) }
+        } else {
+            currentCardIndex += 1
+        }
+        playersDone.clear()
+        ruinsPicked = if (monsterDrawn) ruinsPicked else false
+        monsterDrawn = false
+    }
+
+    private fun playerMatching(player: Player): Player = if (players.size == 1) {
+        player
+    } else {
+        val idx = players.indexOf(player)
+        when ((deck[currentCardIndex] as MonsterCard).direction()) {
+            Direction.CLOCKWISE -> players[if (idx == players.size - 1) 0 else idx + 1]
+            Direction.COUNTERCLOCKWISE -> players[ if (idx == 0) players.size - 1 else idx - 1]
         }
     }
 
@@ -326,14 +223,16 @@ class GameImplementation(
         .filter { board.terrainAt(it) == Terrain.MOUNTAIN }
         .count { mountain -> board.adjacent(mountain).all { board.terrainAt(it) != Terrain.EMPTY } }
 
-    private fun calculateScore() {
-        val quest1 = scoreCards.getValue(season)
-        val quest2 = scoreCards.getValue(season.next())
-        players.forEach {
-            it.summaries = it.summaries + RoundSummary(
-                quest1.evaluate(it.board), quest2.evaluate(it.board), it.coins, it.board.countMonsterPoints()
-            )
+    private fun endGame() {
+        players.map {
+            it.nick to it.summaries.last().let { s: RoundSummary ->
+                Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, Season.WINTER)
+            }
         }
+            .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
+        val (winner, totalScore) = players.map { it to it.summaries.sumBy(RoundSummary::sum) }.maxBy { it.second }!!
+        recentEvents.addAll(Results(winner.nick, totalScore))
+        gameEnded = true
     }
 
     private fun onNextCard() {
@@ -362,23 +261,67 @@ class GameImplementation(
         }
     }
 
-    private fun endGame() {
-        players.map {
-            it.nick to it.summaries.last().let { s: RoundSummary ->
-                Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, Season.WINTER)
-            }
+    private fun calculateScore() {
+        val quest1 = scoreCards.getValue(season)
+        val quest2 = scoreCards.getValue(season.next())
+        players.forEach {
+            it.summaries = it.summaries + RoundSummary(
+                quest1.evaluate(it.board), quest2.evaluate(it.board), it.coins, countMonsterPoints(it.board)
+            )
         }
-            .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
-        val (winner, totalScore) = players.map { it to it.summaries.sumBy(RoundSummary::sum) }.maxBy { it.second }!!
-        recentEvents.addAll(Results(winner.nick, totalScore))
-        gameEnded = true
+    }
+
+    private fun goalsEvent(): GoalsEvent = GoalsEvent(
+        scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
+        scoreCardId(Season.WINTER)
+    )
+
+    private fun scoreCardId(season: Season) = scoreCards.getValue(season)::class.java.simpleName.takeLast(2)
+
+    private fun player(nick: String) = players.find { it.nick == nick }
+
+    override fun boardOf(nick: String): Board = player(nick)?.board!!
+
+    override fun recentEvents(): Map<String, Set<Event>> = recentEvents.getAll()
+
+    private fun toScore(s: RoundSummary, season: Season) =
+        Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, season)
+
+    private fun newCardEvent(): NewCardEvent {
+        return NewCardEvent(
+            deck[currentCardIndex].number(),
+            shouldDrawOnRuins(),
+            pointsInRound + deck[currentCardIndex].points(),
+            season.pointsInRound
+        )
     }
 
     override fun toString(): String {
         return "GameImplementation(gameId='$gameId', deck=$deck, monstersDeck=$monstersDeck, scoreCards=$scoreCards, shuffler=$shuffler, season=$season, currentCardIndex=$currentCardIndex, pointsInRound=$pointsInRound, players=$players, ruinsDrawn=$ruinsPicked, monsterDrawn=$monsterDrawn, playersDone=$playersDone, recentEvents=$recentEvents, gameEnded=$gameEnded, started=$started)"
     }
 
+    companion object {
+        private fun cards() = listOf(
+            Ruins05, Ruins06, BigRiver07, Fields08, City09, ForgottenForest10, RuralStream11,
+            Farm12, Orchard13, TreeFortress14, Fends15, FishermanVillage16, Cracks17
+        )
 
+        private fun monsters(): Set<MonsterCard> =
+            setOf(GoblinsAttack01, BogeymanAssault02, CoboldsCharge03, GnollsInvasion04)
+
+        private fun randomScoreCards(): List<ScoreCard> =
+            listOf(
+                setOf(GoldenBreadbasket32, FieldPuddle30, MagesValley31, VastEnbankment33).random(),
+                setOf(HugeCity35, Colony34, FertilePlain36, Fortress37).random(),
+                setOf(ForestTower28, MountainWoods29, Coppice27, ForestGuard26).random(),
+                setOf(Borderlands38, LostDemesne39, TradingRoad40, Hideouts41).random()
+            )
+
+        fun countMonsterPoints(board: Board): Int = board.all { it == Terrain.MONSTER }
+            .flatMap { xy -> board.adjacent(xy) }
+            .toSet()
+            .count { board.terrainAt(it) == Terrain.EMPTY }
+    }
 }
 
 interface Game {
