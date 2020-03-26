@@ -110,12 +110,7 @@ class GameImplementation(
         player(nick)?.left = false
         val player = player(nick)!!
         (setOf(
-            NewCardEvent(
-                deck[currentCardIndex].number(),
-                ruinsPicked,
-                pointsInRound + deck[currentCardIndex].points(),
-                season.pointsInRound
-            ),
+            newCardEvent(),
             GoalsEvent(
                 scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
                 scoreCardId(Season.WINTER)
@@ -147,12 +142,7 @@ class GameImplementation(
         cleanBeforeNextTurn()
         onNextCard()
         recentEvents.addAll(
-            NewCardEvent(
-                deck[currentCardIndex].number(),
-                ruinsPicked,
-                pointsInRound + deck[currentCardIndex].points(),
-                season.pointsInRound
-            ),
+            newCardEvent(),
             GoalsEvent(
                 scoreCardId(Season.SPRING), scoreCardId(Season.SUMMER), scoreCardId(Season.AUTUMN),
                 scoreCardId(Season.WINTER)
@@ -207,9 +197,12 @@ class GameImplementation(
             currentCardIndex += 1
         }
         playersDone.clear()
-        ruinsPicked = false
+        ruinsPicked = if (monsterDrawn) ruinsPicked else false
         monsterDrawn = false
     }
+
+    // ruins card does not affect monsters
+    private fun shouldDrawOnRuins() = ruinsPicked && !monsterDrawn
 
     private fun update(nick: String, shape: Shape, terrain: Terrain) {
         val player = player(nick) ?: throw RuntimeException("No player with id $nick")
@@ -258,27 +251,22 @@ class GameImplementation(
                     .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
                 season = season.next()
                 onNextCard()
-                recentEvents.addAll(
-                    NewCardEvent(
-                        deck[currentCardIndex].number(),
-                        ruinsPicked,
-                        pointsInRound + deck[currentCardIndex].points(),
-                        season.pointsInRound
-                    )
-                )
+                recentEvents.addAll(newCardEvent())
             } else {
                 cleanBeforeNextCard()
                 onNextCard()
-                recentEvents.addAll(
-                    NewCardEvent(
-                        deck[currentCardIndex].number(),
-                        ruinsPicked,
-                        pointsInRound + deck[currentCardIndex].points(),
-                        season.pointsInRound
-                    )
-                )
+                recentEvents.addAll(newCardEvent())
             }
         }
+    }
+
+    private fun newCardEvent(): NewCardEvent {
+        return NewCardEvent(
+            deck[currentCardIndex].number(),
+            shouldDrawOnRuins(),
+            pointsInRound + deck[currentCardIndex].points(),
+            season.pointsInRound
+        )
     }
 
     private fun validate(shape: Shape, board: Board,
@@ -292,8 +280,14 @@ class GameImplementation(
         }
 
         val is1x1SpecialCase = shape.size() == 1 &&
-                (ruinsPicked && !board.canDrawShapeOnRuins(currentCard.availableShapes())
+                (shouldDrawOnRuins() && !board.canDrawShapeOnRuins(currentCard.availableShapes())
                         || board.noPlaceToDraw(currentCard.availableShapes()))
+
+        if (monsterDrawn) {
+            if (terrain != Terrain.MONSTER) {
+                return ErrorCode.INVALID_TERRAIN_TYPE
+            }
+        }
 
         if (!is1x1SpecialCase) {
             if (!currentCard.isValid(shape)) {
@@ -302,7 +296,7 @@ class GameImplementation(
             if (!currentCard.isValid(terrain)) {
                 return ErrorCode.INVALID_TERRAIN_TYPE
             }
-            if (ruinsPicked && !shape.anyMatches { board.hasRuinsOn(it) }) {
+            if (shouldDrawOnRuins() && !shape.anyMatches { board.hasRuinsOn(it) }) {
                 return ErrorCode.SHAPE_MUST_BE_ON_RUINS
             }
         }
