@@ -115,7 +115,7 @@ class GameImplementation(
         boardOwner.coins += countMountainsClosedWith(shape, board)
         playersDone.add(nick)
 
-        recentEvents.add(nick, AcceptedShape(terrain, shape.toPoints().map { (x, y) -> Point(x, y) }, player.coins))
+        recentEvents.add(nick, AcceptedShape(terrain, shape.toPoints(), player.coins))
 
         if (players.size != playersDone.size) {
             return

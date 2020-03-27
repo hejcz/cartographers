@@ -59,7 +59,7 @@ data class PointGroupShape(
         points.asSequence().map { (x, y) ->
             val xShift = point.x - x
             val yShift = point.y - y
-            PointGroupShape(points.map { (x, y) -> Point(x + xShift, y + yShift) }.toSet())
+            PointGroupShape(points.map { it.moveX(xShift).moveY(yShift) }.toSet())
         }
 
     override fun isEmpty(): Boolean = points.isEmpty()
@@ -68,7 +68,7 @@ data class PointGroupShape(
         private fun moveTopLeftToZeroZero(positions: Collection<Point>): Shape {
             val (leftX, topY) =
                 positions.sortedWith(compareBy<Point> { it.y }.thenByDescending { it.x }).first()
-            return PointGroupShape(positions.map { (x, y) -> Point(x - leftX, y - topY) }.toSet())
+            return PointGroupShape(positions.map { it.moveX(-leftX).moveY(-topY) }.toSet())
         }
 
     }

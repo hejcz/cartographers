@@ -59,8 +59,8 @@ interface Board {
 class MapBoard(private val board: Map<Point, Terrain>) : Board {
     override fun draw(shape: Shape, terrain: Terrain): Board {
         val newBoard = board.toMutableMap()
-        for ((x, y) in shape.toPoints()) {
-            newBoard[Point(x, y)] = terrain
+        for (p in shape.toPoints()) {
+            newBoard[p] = terrain
         }
         return MapBoard(newBoard.toMap().withDefault { Terrain.EMPTY })
     }
