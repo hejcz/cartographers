@@ -130,20 +130,18 @@ class GameImplementation(
             return
         }
 
-        if (season != Season.WINTER) {
-            cleanBeforeNextTurn()
-            calculateScore()
-            players.map { it.nick to toScore(it.summaries.last(), season) }
-                .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
+        cleanBeforeNextTurn()
+        calculateScore()
+        players.map { it.nick to toScore(it.summaries.last(), season) }
+            .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
+
+        if (season == Season.WINTER) {
+            endGame()
+        } else {
             season = season.next()
             onNextCard()
             recentEvents.addAll(newCardEvent())
-            return
         }
-
-        calculateScore()
-        season = season.next()
-        endGame()
     }
 
     private fun validate(shape: Shape, board: Board,
@@ -152,7 +150,7 @@ class GameImplementation(
             return ErrorCode.EMPTY_SHAPE
         }
 
-        if (shape.anyMatches { board.terrainAt(it) == Terrain.OUTSIDE_THE_MAP }) {
+        if (shape.anyMatches { board.terrainAt(it) != Terrain.EMPTY }) {
             return ErrorCode.SHAPE_OUTSIDE_THE_MAP_OR_OVERLAPING
         }
 
@@ -224,12 +222,6 @@ class GameImplementation(
         .count { mountain -> board.adjacent(mountain).all { board.terrainAt(it) != Terrain.EMPTY } }
 
     private fun endGame() {
-        players.map {
-            it.nick to it.summaries.last().let { s: RoundSummary ->
-                Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, Season.WINTER)
-            }
-        }
-            .forEach { (nick, summary) -> recentEvents.add(nick, ScoresEvent(summary)) }
         val (winner, totalScore) = players.map { it to it.summaries.sumBy(RoundSummary::sum) }.maxBy { it.second }!!
         recentEvents.addAll(Results(winner.nick, totalScore))
         gameEnded = true
