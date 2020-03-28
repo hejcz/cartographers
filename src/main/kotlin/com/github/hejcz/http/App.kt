@@ -33,6 +33,7 @@ data class Command(val type: String, val data: JsonNode)
 data class JoinGameData(val nick: String, val gid: String)
 data class CreateGameData(val nick: String, val gid: String, val options: Map<String, String>)
 data class DrawData(val points: Array<Point>, val terrain: Terrain)
+data class JoinedData(val nick: String, val roomId: String)
 
 data class PlayerInfo(val nick: String, val room: Room)
 
@@ -115,7 +116,7 @@ class App {
                     gidToRoom[gid] = newRoom
                     newGameLock.unlock()
                     wsToInfo[outgoing] = PlayerInfo(nick, newRoom)
-                    sendEvent("CREATE_SUCCESS", mapper.writeValueAsString(nick))
+                    sendEvent("CREATE_SUCCESS", mapper.writeValueAsString(JoinedData(nick, gid)))
                 }
                 "rooms" -> {
                     if (wsToInfo[outgoing] != null) {
@@ -135,7 +136,7 @@ class App {
                         // TODO
                         if (room.join(Nick(nick), WsChannel(outgoing, mapper))) {
                             wsToInfo[outgoing] = PlayerInfo(nick, room)
-                            sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(nick))
+                            sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(JoinedData(nick, gid)))
                         }
                         return
                     }

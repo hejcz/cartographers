@@ -17,13 +17,16 @@ const port = window.location.port;
 const ws = new WebSocket(
     host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
 
+let wsPingInterval;
+let httpPingInterval;
+
 ws.onopen = function () {
-    setInterval(() => {
+    wsPingInterval = setInterval(() => {
         // ping heroku to avoid H15 idle connection error. For some reason ping from server 
 	    // to client does not work with heroku.
         ws.send(JSON.stringify({ "type": "ping"}));
     }, 3000);
-    setInterval(() => {
+    httpPingInterval = setInterval(() => {
         // ping heroku to avoid dyno shut down
         d3.request("/").get();
     }, 1000 * 60 * 5);
@@ -41,6 +44,14 @@ ws.onopen = function () {
         ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": roomId } }));
     });
 };
+
+ws.onclose = function () {
+    clearInterval(wsPingInterval);
+    clearInterval(httpPingInterval);
+    d3.select("#errors")
+        .append("div")
+        .text("Disconnected - reload site and join with same nick and room id");
+}
 
 ws.onmessage = function (event) {
     console.log(event);
@@ -103,12 +114,13 @@ ws.onmessage = function (event) {
             d3.select("#start").style("display", "none");
         }
         if (event["type"] === "CREATE_SUCCESS" || event["type"] === "JOIN_SUCCESS") {
-            const { data } = event;
-            nick = data;
+            const { nick : nickname, roomId } = event.data;
+            nick = nickname;
             d3.select("#start").style("display", null);
             d3.select("#goals").style("display", null);
             d3.select("#submit").style("display", null);
             d3.select("#game-creation").style("display", "none");
+            d3.select("#game-info").html(`Nick: ${nick}<br>Room id: ${roomId}<br>`);
         }
         if (event["type"] === "ERROR") {
             const { error } = event;
