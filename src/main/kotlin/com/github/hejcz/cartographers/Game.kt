@@ -37,8 +37,10 @@ class GameImplementation(
     }
 
     private fun processFirstConnection(nick: String) {
-        players = players + Player(nick)
+        val player = Player(nick, if (options.advancedBoard) Board.createAdvanced() else Board.create())
+        players = players + player
         recentEvents = InMemoryEvents(players.map { it.nick })
+        recentEvents.add(nick, BoardEvent(player.board.allPoints(), player.board.ruins()))
     }
 
     private fun processReconnect(nick: String) {
@@ -47,7 +49,7 @@ class GameImplementation(
         (setOf(
             newCardEvent(),
             goalsEvent(),
-            BoardEvent(player.board.allPoints()),
+            BoardEvent(player.board.allPoints(), player.board.ruins()),
             CoinsEvent(player.coins)
         ) + player.summaries
             .mapIndexed { index, it -> ScoresEvent(toScore(it, Season.byIndex(index))) })
@@ -196,7 +198,7 @@ class GameImplementation(
     private fun cleanBeforeNextCard() {
         if (deck[currentCardIndex] is MonsterCard) {
             deck = deck - deck[currentCardIndex]
-            players.forEach { recentEvents.add(it.nick, BoardEvent(it.board.allPoints())) }
+            players.forEach { recentEvents.add(it.nick, BoardEvent(it.board.allPoints(), it.board.ruins())) }
         } else {
             currentCardIndex += 1
         }
@@ -247,7 +249,7 @@ class GameImplementation(
                 .forEach { (drawingPlayerNick, boardOwner) ->
                     recentEvents.add(
                         drawingPlayerNick,
-                        BoardEvent(boardOwner.board.allPoints())
+                        BoardEvent(boardOwner.board.allPoints(), boardOwner.board.ruins())
                     )
                 }
         }
@@ -275,6 +277,8 @@ class GameImplementation(
     override fun boardOf(nick: String): Board = player(nick)?.board!!
 
     override fun recentEvents(): Map<String, Set<Event>> = recentEvents.getAll()
+
+    override fun isFinished(): Boolean = gameEnded
 
     private fun toScore(s: RoundSummary, season: Season) =
         Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, season)
@@ -324,4 +328,5 @@ interface Game {
     fun leave(nick: String): Game
     fun canJoin(nick: String): Boolean
     fun recentEvents(): Map<String, Set<Event>>
+    fun isFinished(): Boolean
 }

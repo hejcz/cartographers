@@ -45,8 +45,8 @@ class App {
         fun main(args: Array<String>) {
             embeddedServer(Netty, System.getProperty("SERVER_PORT", "8080").toInt()) {
                 install(WebSockets) {
-                    pingPeriodMillis = 5000
-                    timeoutMillis = 5000
+                    pingPeriodMillis = 3000
+                    timeoutMillis = 15000
                 }
                 routing {
                     get("/") {
@@ -105,7 +105,8 @@ class App {
                         return
                     }
                     val newRoom = Room(gid)
-                    newRoom.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }
+                    WsChannel(outgoing, mapper)
+                    newRoom.join(Nick(nick), WsChannel(outgoing, mapper))
                     gidToRoom[gid] = newRoom
                     newGameLock.unlock()
                     wsToInfo[outgoing] = PlayerInfo(nick, newRoom)
@@ -127,7 +128,7 @@ class App {
                     val room = gidToRoom[gid]
                     if (room != null) {
                         // TODO
-                        if (room.join(Nick(nick)) { outgoing.sendBlocking(Frame.Text(mapper.writeValueAsString(it))) }) {
+                        if (room.join(Nick(nick), WsChannel(outgoing, mapper))) {
                             wsToInfo[outgoing] = PlayerInfo(nick, room)
                             sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(nick))
                         }

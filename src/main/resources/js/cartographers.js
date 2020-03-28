@@ -7,12 +7,7 @@ let nick = undefined;
 
 // create initial board. it's gonna be mutated in the future so
 // d3 does not have problems with pointing to old elements.
-let board = [];
-for (let x = 0; x <= 10; x++) {
-    for (let y = 0; y <= 10; y++) {
-        board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
-    }
-}
+let board = emptyArray;
 
 const drawableTerrains = ["FOREST", "WATER", "PLAINS", "CITY", "MONSTER"]
 
@@ -121,6 +116,14 @@ ws.onmessage = function (event) {
                 .remove();
         }
         if (event["type"] === "BOARD") {
+            if (board === emptyArray) {
+                board = [];
+                for (let x = 0; x <= 10; x++) {
+                    for (let y = 0; y <= 10; y++) {
+                        board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
+                    }
+                }
+            }
             resetBoard();
             event.board.forEach(cell => {
                 const {x, y, terrain} = cell;
@@ -128,6 +131,13 @@ ws.onmessage = function (event) {
                 if (match) {
                     match.type = terrain;
                     match.locked = true;
+                }
+            });
+            event.ruins.forEach(point => {
+                const {x, y} = point;
+                const match = board.find(c => c.x === x && c.y === y);
+                if (match) {
+                    match.hasRuins = true;
                 }
             });
             drawBoard();
@@ -164,28 +174,6 @@ function resetBoard() {
     for (let cell of board) {
         cell.type = 'EMPTY';
         cell.locked = false;
-    }
-
-    for (const cell of board) {
-        if (cell.x == -1 && cell.y == 5
-            || cell.x == -2 && cell.y == 1
-            || cell.x == -2 && cell.y == 9
-            || cell.x == -8 && cell.y == 1
-            || cell.x == -8 && cell.y == 9
-            || cell.x == -9 && cell.y == 5) {
-            cell.hasRuins = true;
-        }
-
-        if (
-            cell.x == -1 && cell.y == 3
-            || cell.x == -2 && cell.y == 8
-            || cell.x == -5 && cell.y == 5
-            || cell.x == -8 && cell.y == 2
-            || cell.x == -9 && cell.y == 7
-        ) {
-            cell.type = "MOUNTAIN";
-            cell.locked = true;
-        }
     }
 }
 
@@ -344,6 +332,10 @@ function drawCoins() {
 var boardInterval = undefined;
 
 function drawBoard() {
+    if (board === emptyArray) {
+        return;
+    }
+
     const cells = rootSvg.select("#board")
         .selectAll(".cell")
         .data(board, d => `${d.x} ${d.y}`);

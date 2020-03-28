@@ -1,9 +1,8 @@
 package com.github.hejcz.cartographers
 
-class Player(val nick: String) {
+class Player(val nick: String, b: Board) {
     var left: Boolean = false
-    var board: Board =
-        Board.create()
+    var board: Board = b
     var coins = 0
     var summaries = listOf<RoundSummary>()
 

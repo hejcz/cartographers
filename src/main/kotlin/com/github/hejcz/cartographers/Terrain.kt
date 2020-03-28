@@ -8,6 +8,7 @@ enum class Terrain(private val str: () -> String) {
     CITY({ -> "[C]" }),
     PLAINS({ -> "[P]" }),
     WATER({ -> "[W]" }),
+    ABYSS({ -> "[A]" }),
     MONSTER({ -> "[D]" });
 
     override fun toString(): String {
@@ -22,6 +23,7 @@ enum class Terrain(private val str: () -> String) {
             "[P]" -> PLAINS
             "[W]" -> WATER
             "[M]" -> MOUNTAIN
+            "[A]" -> ABYSS
             else -> throw RuntimeException("should not create terrain from $str")
         }
     }
