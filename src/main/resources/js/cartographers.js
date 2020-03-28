@@ -174,9 +174,6 @@ ws.onmessage = function (event) {
 
 const rootSvg = d3.select("#game");
 
-rootSvg.append("svg")
-    .attr("id", "board");
-
 d3.select("#start")
     .on("click", function () { ws.send(JSON.stringify({ "type": "start" })) });
 
@@ -357,23 +354,24 @@ function drawBoard() {
         return;
     }
 
-    const cells = rootSvg.select("#board")
+    const cellWidth = 100;
+    const cellHeight = 100;
+
+    const cells = d3.select("#game")
+        .attr("viewBox", `0 0 ${maxY * cellWidth} ${maxX * cellHeight}`)
         .selectAll(".cell")
         .data(board, d => `${d.x} ${d.y}`);
 
-    const cellWidth = 100 / maxY;
-    const cellHeight = 100 / maxX;
-
     const cellEnter = cells.enter()
         .append("svg")
-        .attr("x", d => `${d.y * cellWidth}%`)
-        .attr("y", d => `${-d.x * cellHeight}%`);
+        .attr("x", d => `${d.y * cellWidth}`)
+        .attr("y", d => `${-d.x * cellHeight}`);
 
     const enter = cellEnter
         .append("rect")
         .attr("class", "cell")
-        .attr("width", `${cellWidth}%`)
-        .attr("height", `${cellHeight}%`)
+        .attr("width", `${cellWidth}`)
+        .attr("height", `${cellHeight}`)
         .style("stroke-width", "1px")
         .style("stroke", "grey")
         .on("click", function (d) {
@@ -393,10 +391,10 @@ function drawBoard() {
     const ruinsImage = cellEnter.filter(d => d.hasRuins)
         .append("image")
         .attr("href", "/game/ruins.svg")
-        .attr("width", `${cellWidth*0.6}%`)
-        .attr("height", `${cellHeight*0.6}%`)
-        .attr("x", `${cellWidth*0.2}%`)
-        .attr("y", `${cellHeight*0.2}%`)
+        .attr("width", `${cellWidth*0.6}`)
+        .attr("height", `${cellHeight*0.6}`)
+        .attr("x", `${cellWidth*0.2}`)
+        .attr("y", `${cellHeight*0.2}`)
         .on("click", function (d) {
             if (d.locked) {
                 return;
@@ -414,10 +412,10 @@ function drawBoard() {
     const mountainImage = cellEnter.filter(d => d.type === "MOUNTAIN")
         .append("image")
         .attr("href", "/game/mountain.svg")
-        .attr("width", `${cellWidth*0.6}%`)
-        .attr("height", `${cellHeight*0.6}%`)
-        .attr("x", `${cellWidth*0.2}%`)
-        .attr("y", `${cellHeight*0.2}%`);
+        .attr("width", `${cellWidth*0.6}`)
+        .attr("height", `${cellHeight*0.6}`)
+        .attr("x", `${cellWidth*0.2}`)
+        .attr("y", `${cellHeight*0.2}`);
 
     const cellsToAnimate = cells.merge(enter)
         .style("fill", function (d) { return `rgb(${colorByType[d.type]})` })
@@ -438,9 +436,4 @@ function drawBoard() {
             .duration(500)
             .style("fill-opacity", 1);
     }, 1000);
-
-    setTimeout(() => {
-        const boardWidth = d3.select("#board").node().getBBox().width;
-        rootSvg.style("height", `${maxX * (boardWidth / maxY)}px`);
-    }, 5);
 }
