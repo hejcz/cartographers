@@ -22,6 +22,7 @@ interface Board {
     fun ruins(): Set<Point>
     fun width(): Int
     fun height(): Int
+    fun erase(shape: Shape): Board
 
     companion object {
         fun create(): Board =

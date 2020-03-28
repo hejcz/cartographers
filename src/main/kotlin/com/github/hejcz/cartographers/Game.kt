@@ -119,6 +119,7 @@ class GameImplementation(
         }
 
         boardOwner.coins += countMountainsClosedWith(shape, board)
+        player.lastShape = shape
         playersDone.add(nick)
 
         recentEvents.add(nick, AcceptedShape(terrain, shape.toPoints(), player.coins))
@@ -284,6 +285,20 @@ class GameImplementation(
 
     override fun isFinished(): Boolean = gameEnded
 
+    override fun undo(nick: String): Game {
+        recentEvents.clear()
+        if (nick !in playersDone) {
+            recentEvents.add(nick, ErrorEvent(ErrorCode.CANT_DRAW_TWICE))
+            return this
+        }
+        playersDone.remove(nick)
+        player(nick)?.let {
+            it.board = it.board.erase(it.lastShape)
+            recentEvents.add(it.nick, boardEvent(it))
+        }
+        return this
+    }
+
     private fun toScore(s: RoundSummary, season: Season) =
         Score(s.quest1Points, s.quest2Points, s.coinsPoints, s.monstersPenalty, season)
 
@@ -333,4 +348,5 @@ interface Game {
     fun canJoin(nick: String): Boolean
     fun recentEvents(): Map<String, Set<Event>>
     fun isFinished(): Boolean
+    fun undo(nick: String): Game
 }

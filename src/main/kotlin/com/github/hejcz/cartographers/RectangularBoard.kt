@@ -20,6 +20,15 @@ class RectangularBoard(private val board: Map<Point, Terrain>, private val ruins
             newBoard.toMap().withDefault { Terrain.EMPTY }, ruins, height, width)
     }
 
+    override fun erase(shape: Shape): Board {
+        val newBoard = board.toMutableMap()
+        for (p in shape.toPoints()) {
+            newBoard.remove(p)
+        }
+        return RectangularBoard(
+            newBoard.toMap().withDefault { Terrain.EMPTY }, ruins, height, width)
+    }
+
     override fun all(predicate: (Terrain) -> Boolean): Set<Point> =
         board.filterValues(predicate).keys
 

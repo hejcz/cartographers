@@ -30,6 +30,22 @@ interface Shape {
     }
 }
 
+object NoShape : Shape {
+    override fun createAllVariations(): Set<Shape> = emptySet()
+
+    override fun anyMatches(predicate: (Point) -> Boolean): Boolean = false
+
+    override fun toPoints(): Set<Point> = emptySet()
+
+    override fun normalize(): Shape = NoShape
+
+    override fun size(): Int = 0
+
+    override fun allVersionsContaining(point: Point): Sequence<Shape> = emptySequence()
+
+    override fun isEmpty(): Boolean = true
+}
+
 data class PointGroupShape(
     private val points: Set<Point>
 ) : Shape {

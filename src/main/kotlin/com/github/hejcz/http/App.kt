@@ -71,7 +71,6 @@ class App {
                                 e.printStackTrace()
                             }
                         }
-                        handle(Command("leave", NullNode.getInstance()))
                     }
                 }
             }.start(wait = true)
@@ -80,15 +79,6 @@ class App {
 
         private suspend fun DefaultWebSocketServerSession.handle(command: Command) {
             when (command.type) {
-                "leave" -> {
-                    val info = wsToInfo[outgoing]
-                    if (info == null) {
-                        sendError(ErrorCode.GAME_NOT_FOUND)
-                        return
-                    }
-                    info.room.leave(Nick(info.nick))
-                    wsToInfo.remove(outgoing)
-                }
                 "create" -> {
                     val (nick, gid, opts) = mapper.readValue<CreateGameData>(command.data.toString())
                     if (wsToInfo[outgoing] != null) {
@@ -118,13 +108,6 @@ class App {
                     newGameLock.unlock()
                     wsToInfo[outgoing] = PlayerInfo(nick, newRoom)
                     sendEvent("CREATE_SUCCESS", mapper.writeValueAsString(JoinedData(nick, gid)))
-                }
-                "rooms" -> {
-                    if (wsToInfo[outgoing] != null) {
-                        sendError(ErrorCode.ALREADY_IN_GAME)
-                        return
-                    }
-                    sendEvent("ROOMS", mapper.writeValueAsString(gidToRoom.keys))
                 }
                 "join" -> {
                     val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
@@ -158,6 +141,14 @@ class App {
                         return
                     }
                     info.room.draw(Nick(info.nick), mapper.readValue(command.data.toString()))
+                }
+                "undo" -> {
+                    val info = wsToInfo[outgoing]
+                    if (info == null) {
+                        sendError(ErrorCode.GAME_NOT_FOUND)
+                        return
+                    }
+                    info.room.undo(Nick(info.nick))
                 }
             }
         }

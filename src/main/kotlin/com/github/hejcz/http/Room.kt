@@ -80,8 +80,8 @@ class Room(gid: String, gameOptions: GameOptions) {
         }
     }
 
-    fun leave(nick: Nick) = synchronized(lock) {
-        game.leave(nick.nick)
-        callbacks.remove(nick)
+    fun undo(nick: Nick) = synchronized(lock) {
+        game = game.undo(nick.nick)
+        sendEvents()
     }
 }

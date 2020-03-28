@@ -121,6 +121,7 @@ ws.onmessage = function (event) {
             d3.select("#start").style("display", null);
             d3.select("#goals").style("display", null);
             d3.select("#submit").style("display", null);
+            d3.select("#undo").style("display", null);
             d3.select("#game-creation").style("display", "none");
             d3.select("#game-info").html(`Nick: ${nick}<br>Room id: ${roomId}<br>`);
         }
@@ -187,8 +188,6 @@ d3.select("#goals")
         gs.style("display", display === 'none' ? 'block' : 'none')
      });
 
-resetBoard();
-
 function resetBoard() {
     for (let cell of board) {
         cell.type = 'EMPTY';
@@ -225,6 +224,12 @@ function updateTerrains(terrains) {
 d3.select("#submit")
     .on("click", function (event) {
         const msg = { "type": "draw", "data": { "points": [...points].map(cell => ({ "x": cell.x, "y": cell.y })), "terrain": currentTerrain } };
+        ws.send(JSON.stringify(msg));
+    });
+
+d3.select("#undo")
+    .on("click", function (event) {
+        const msg = { "type": "undo"};
         ws.send(JSON.stringify(msg));
     });
 
