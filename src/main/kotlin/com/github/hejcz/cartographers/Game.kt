@@ -37,10 +37,14 @@ class GameImplementation(
     }
 
     private fun processFirstConnection(nick: String) {
-        val player = Player(nick, if (options.advancedBoard) Board.createAdvanced() else Board.create())
+        val player = Player(nick, when {
+            options.rectangularShape -> Board.createCustom()
+            options.advancedBoard -> Board.createAdvanced()
+            else -> Board.create()
+        })
         players = players + player
         recentEvents = InMemoryEvents(players.map { it.nick })
-        recentEvents.add(nick, BoardEvent(player.board.allPoints(), player.board.ruins()))
+        recentEvents.add(nick, boardEvent(player))
     }
 
     private fun processReconnect(nick: String) {
@@ -49,7 +53,7 @@ class GameImplementation(
         (setOf(
             newCardEvent(),
             goalsEvent(),
-            BoardEvent(player.board.allPoints(), player.board.ruins()),
+            boardEvent(player),
             CoinsEvent(player.coins)
         ) + player.summaries
             .mapIndexed { index, it -> ScoresEvent(toScore(it, Season.byIndex(index))) })
@@ -198,7 +202,7 @@ class GameImplementation(
     private fun cleanBeforeNextCard() {
         if (deck[currentCardIndex] is MonsterCard) {
             deck = deck - deck[currentCardIndex]
-            players.forEach { recentEvents.add(it.nick, BoardEvent(it.board.allPoints(), it.board.ruins())) }
+            players.forEach { recentEvents.add(it.nick, boardEvent(it)) }
         } else {
             currentCardIndex += 1
         }
@@ -206,6 +210,9 @@ class GameImplementation(
         ruinsPicked = if (monsterDrawn) ruinsPicked else false
         monsterDrawn = false
     }
+
+    private fun boardEvent(player: Player) =
+        BoardEvent(player.board.allPoints(), player.board.ruins(), player.board.width(), player.board.height())
 
     private fun playerMatching(player: Player): Player = if (players.size == 1) {
         player
@@ -247,10 +254,7 @@ class GameImplementation(
 
             shiftedNicks.zip(players)
                 .forEach { (drawingPlayerNick, boardOwner) ->
-                    recentEvents.add(
-                        drawingPlayerNick,
-                        BoardEvent(boardOwner.board.allPoints(), boardOwner.board.ruins())
-                    )
+                    recentEvents.add(drawingPlayerNick, boardEvent(boardOwner))
                 }
         }
     }

@@ -1,6 +1,7 @@
 package com.github.hejcz.cartographers
 
 data class GameOptions(
-    val swapBoardsOnMonsters: Boolean = false,
-    val advancedBoard: Boolean = false
+    val swapBoardsOnMonsters: Boolean = true,
+    val advancedBoard: Boolean = false,
+    val rectangularShape: Boolean = false
 )

@@ -73,6 +73,7 @@ data class GoalsEvent(val spring: String, val summer: String, val autumn: String
 
 data class BoardElement(val x: Int, val y: Int, val terrain: Terrain)
 
-data class BoardEvent(val board: Set<BoardElement>, val ruins: Set<Point>, override val type: EventType = EventType.BOARD) : Event
+data class BoardEvent(val board: Set<BoardElement>, val ruins: Set<Point>, val width: Int, val height: Int,
+        override val type: EventType = EventType.BOARD) : Event
 
 data class CoinsEvent(val coins: Int, override val type: EventType = EventType.COINS) : Event

@@ -109,7 +109,8 @@ class App {
                     }
                     val newRoom = Room(gid, GameOptions(
                         swapBoardsOnMonsters = opts["swap"] == "true",
-                        advancedBoard = opts["advanced"] == "true"
+                        advancedBoard = opts["advanced"] == "true",
+                        rectangularShape = opts["rectangular"] == "true"
                     ))
                     WsChannel(outgoing, mapper)
                     newRoom.join(Nick(nick), WsChannel(outgoing, mapper))

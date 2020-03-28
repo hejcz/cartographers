@@ -20,6 +20,8 @@ interface Board {
     fun canDrawShapeOnRuins(shapes: Set<Shape>): Boolean
     fun isOnBorder(point: Point): Boolean
     fun ruins(): Set<Point>
+    fun width(): Int
+    fun height(): Int
 
     companion object {
         fun create(): Board =
@@ -67,6 +69,36 @@ interface Board {
             )
         }
 
+        fun createCustom(): Board =
+            RectangularBoard(
+                mapOf(
+                    Point(-1, 8) to Terrain.MOUNTAIN,
+                    Point(-2, 3) to Terrain.MOUNTAIN,
+                    Point(-7, 5) to Terrain.MOUNTAIN,
+                    Point(-8, 9) to Terrain.MOUNTAIN,
+                    Point(-9, 2) to Terrain.MOUNTAIN,
+                    Point(-3, 5) to Terrain.ABYSS,
+                    Point(-4, 4) to Terrain.ABYSS,
+                    Point(-4, 5) to Terrain.ABYSS,
+                    Point(-4, 6) to Terrain.ABYSS,
+                    Point(-5, 4) to Terrain.ABYSS,
+                    Point(-5, 5) to Terrain.ABYSS,
+                    Point(-5, 6) to Terrain.ABYSS,
+                    Point(-5, 7) to Terrain.ABYSS,
+                    Point(-6, 5) to Terrain.ABYSS,
+                    Point(-6, 6) to Terrain.ABYSS,
+                    Point(-6, 7) to Terrain.ABYSS,
+                    Point(-10, 5) to Terrain.ABYSS,
+                    Point(-10, 6) to Terrain.ABYSS,
+                    Point(-11, 5) to Terrain.ABYSS,
+                    Point(-11, 6) to Terrain.ABYSS,
+                    Point(-11, 7) to Terrain.ABYSS
+                ).withDefault { Terrain.EMPTY },
+                advancedBoardRuins,
+                14,
+                11
+            )
+
         private fun parseToBoard(
                 img: String): Map<Point, Terrain> {
             val regex = "\\[[^ ]\\]".toRegex()
@@ -111,12 +143,7 @@ data class Point(val x: Int, val y: Int) {
     fun moveY(offset: Int) = Point(x, y + offset)
 
     fun adjacent(minX: Int, maxX: Int, minY: Int, maxY: Int) =
-        listOf(
-            moveX(1),
-            moveX(-1),
-            moveY(1),
-            moveY(-1)
-        )
+        listOf(moveX(1), moveX(-1), moveY(1), moveY(-1))
             .filter { it.x in minX..maxX && it.y in minY..maxY }
             .toSet()
 }

@@ -33,6 +33,8 @@ object TreeFortress14 : Card {
     override fun points(): Int = 2
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object BigRiver07 : Card {
@@ -62,6 +64,8 @@ object BigRiver07 : Card {
     override fun points(): Int = 1
 
     override fun givesCoin(shape: Shape): Boolean = shape.size() == 3
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object ForgottenForest10 : Card {
@@ -90,6 +94,8 @@ object ForgottenForest10 : Card {
     override fun points(): Int = 1
 
     override fun givesCoin(shape: Shape): Boolean = shape.size() == 2
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object Orchard13 : Card {
@@ -111,6 +117,8 @@ object Orchard13 : Card {
     override fun points(): Int = 2
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object City09 : Card {
@@ -138,6 +146,8 @@ object City09 : Card {
     override fun points(): Int = 1
 
     override fun givesCoin(shape: Shape): Boolean = shape.size() == 3
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 sealed class Ruins : Card {
@@ -148,6 +158,8 @@ sealed class Ruins : Card {
     override fun points(): Int = 0
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object Ruins05 : Ruins() {
@@ -178,6 +190,8 @@ object RuralStream11 : Card {
     override fun points(): Int = 2
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object Cracks17 : Card {
@@ -206,6 +220,8 @@ object Cracks17 : Card {
     override fun points(): Int = 0
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object Farm12 : Card {
@@ -233,6 +249,8 @@ object Farm12 : Card {
     override fun points(): Int = 2
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object Fends15 : Card {
@@ -260,6 +278,8 @@ object Fends15 : Card {
     override fun points(): Int = 2
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object Fields08 : Card {
@@ -288,6 +308,8 @@ object Fields08 : Card {
     override fun points(): Int = 1
 
     override fun givesCoin(shape: Shape): Boolean = shape.size() == 2
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object FishermanVillage16 : Card {
@@ -313,4 +335,6 @@ object FishermanVillage16 : Card {
     override fun points(): Int = 2
 
     override fun givesCoin(shape: Shape): Boolean = false
+
+    override fun toString(): String = javaClass.simpleName
 }

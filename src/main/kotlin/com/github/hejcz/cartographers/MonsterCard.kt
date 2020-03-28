@@ -29,6 +29,8 @@ object GoblinsAttack01 : MonsterCard {
         availableShapes
 
     override fun number(): String = "01"
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object BogeymanAssault02 : MonsterCard {
@@ -47,6 +49,8 @@ object BogeymanAssault02 : MonsterCard {
         availableShapes
 
     override fun number(): String = "02"
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object GnollsInvasion04 : MonsterCard {
@@ -66,6 +70,8 @@ object GnollsInvasion04 : MonsterCard {
         availableShapes
 
     override fun number(): String = "04"
+
+    override fun toString(): String = javaClass.simpleName
 }
 
 object CoboldsCharge03 : MonsterCard {
@@ -85,4 +91,6 @@ object CoboldsCharge03 : MonsterCard {
         availableShapes
 
     override fun number(): String = "03"
+
+    override fun toString(): String = javaClass.simpleName
 }

@@ -117,6 +117,10 @@ class RectangularBoard(private val board: Map<Point, Terrain>, private val ruins
         false
     }
 
+    override fun height(): Int = height
+
+    override fun width(): Int = width
+
     override fun anyRuins(predicate: (Point) -> Boolean): Boolean =
         ruins.any { predicate(it) }
 

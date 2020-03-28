@@ -8,6 +8,7 @@ let nick = undefined;
 // create initial board. it's gonna be mutated in the future so
 // d3 does not have problems with pointing to old elements.
 let board = emptyArray;
+let maxX = 0, maxY = 0;
 
 const drawableTerrains = ["FOREST", "WATER", "PLAINS", "CITY", "MONSTER"]
 
@@ -35,8 +36,9 @@ ws.onopen = function () {
         const nick = d3.select("#nick").property("value");
         const swap = d3.select("#swap").property("checked");
         const advanced = d3.select("#adv").property("checked");
+        const rect = d3.select("#rect").property("checked");
         ws.send(JSON.stringify({ "type": "create", "data": { "nick": nick, "gid": roomId,
-            "options": {"swap": swap, "advanced": advanced} } }));
+            "options": {"swap": swap, "advanced": advanced, "rectangular": rect} } }));
     });
     d3.select("#join").on("click", () => {
         const roomId = d3.select("#roomId").property("value");
@@ -132,10 +134,12 @@ ws.onmessage = function (event) {
                 .remove();
         }
         if (event["type"] === "BOARD") {
+            maxX = event.height;
+            maxY = event.width;
             if (board === emptyArray) {
                 board = [];
-                for (let x = 0; x <= 10; x++) {
-                    for (let y = 0; y <= 10; y++) {
+                for (let x = 0; x < maxX; x++) {
+                    for (let y = 0; y < maxY; y++) {
                         board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
                     }
                 }
@@ -350,7 +354,7 @@ function drawBoard() {
         .selectAll(".cell")
         .data(board, d => `${d.x} ${d.y}`);
 
-    const cellSize = 100 / 11;
+    const cellSize = 100 / Math.max(maxX, maxY);
 
     const cellEnter = cells.enter()
         .append("svg")
