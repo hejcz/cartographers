@@ -138,29 +138,18 @@ class App {
                     }
                     sendError(ErrorCode.NO_SUCH_ROOM)
                 }
-                "start" -> {
+                else -> {
                     val info = wsToInfo[outgoing]
                     if (info == null) {
                         sendError(ErrorCode.GAME_NOT_FOUND)
                         return
                     }
-                    info.room.start(Nick(info.nick))
-                }
-                "draw" -> {
-                    val info = wsToInfo[outgoing]
-                    if (info == null) {
-                        sendError(ErrorCode.GAME_NOT_FOUND)
-                        return
+                    when (command.type) {
+                        "start" -> info.room.start(Nick(info.nick))
+                        "draw" -> info.room.draw(Nick(info.nick), mapper.readValue(command.data.toString()))
+                        "undo" -> info.room.undo(Nick(info.nick))
+                        else -> println("$info $command")
                     }
-                    info.room.draw(Nick(info.nick), mapper.readValue(command.data.toString()))
-                }
-                "undo" -> {
-                    val info = wsToInfo[outgoing]
-                    if (info == null) {
-                        sendError(ErrorCode.GAME_NOT_FOUND)
-                        return
-                    }
-                    info.room.undo(Nick(info.nick))
                 }
             }
         }

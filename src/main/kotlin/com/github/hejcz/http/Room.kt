@@ -61,6 +61,7 @@ class Room(gid: String, gameOptions: GameOptions) {
 
     fun start(nick: Nick) = synchronized(lock) {
         game = game.start(nick.nick)
+        println(game)
         sendEvents()
     }
 
