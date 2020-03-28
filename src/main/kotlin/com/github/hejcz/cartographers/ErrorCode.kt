@@ -2,6 +2,8 @@ package com.github.hejcz.cartographers
 
 enum class ErrorCode {
     ALREADY_IN_GAME,
+    NICK_CANT_BE_EMPTY,
+    ROOM_ID_CANT_BE_EMPTY,
     GAME_NOT_FOUND,
     ROOM_EXISTS,
     NO_SUCH_ROOM,

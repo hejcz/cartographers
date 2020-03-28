@@ -288,7 +288,7 @@ class GameImplementation(
     override fun undo(nick: String): Game {
         recentEvents.clear()
         if (nick !in playersDone) {
-            recentEvents.add(nick, ErrorEvent(ErrorCode.CANT_DRAW_TWICE))
+            recentEvents.add(nick, ErrorEvent(ErrorCode.NO_DRAWING_TO_UNDO))
             return this
         }
         playersDone.remove(nick)

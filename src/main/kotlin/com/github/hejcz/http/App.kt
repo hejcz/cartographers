@@ -81,8 +81,12 @@ class App {
             when (command.type) {
                 "create" -> {
                     val (nick, gid, opts) = mapper.readValue<CreateGameData>(command.data.toString())
-                    if (wsToInfo[outgoing] != null) {
-                        sendError(ErrorCode.ALREADY_IN_GAME)
+                    if (nick.isBlank()) {
+                        sendError(ErrorCode.NICK_CANT_BE_EMPTY)
+                        return
+                    }
+                    if (gid.isBlank()) {
+                        sendError(ErrorCode.ROOM_ID_CANT_BE_EMPTY)
                         return
                     }
                     val room = gidToRoom[gid]
@@ -111,6 +115,14 @@ class App {
                 }
                 "join" -> {
                     val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
+                    if (nick.isBlank()) {
+                        sendError(ErrorCode.NICK_CANT_BE_EMPTY)
+                        return
+                    }
+                    if (gid.isBlank()) {
+                        sendError(ErrorCode.ROOM_ID_CANT_BE_EMPTY)
+                        return
+                    }
                     if (wsToInfo[outgoing] != null) {
                         sendError(ErrorCode.ALREADY_IN_GAME)
                         return
