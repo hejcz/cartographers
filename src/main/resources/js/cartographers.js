@@ -232,26 +232,28 @@ d3.select("#undo")
         ws.send(JSON.stringify(msg));
     });
 
-d3.select("#points")
-    .attr("width", 600)
-    .attr("height", 200);
-
 function drawPoints() {
 
-    const ps = d3.select("#points").selectAll(".pointsSection")
+    const ps = d3.select("#points")
+        .attr("width", "100%")
+        .style("max-width", "550px")
+        .selectAll(".pointsSection")
         .data([scores[0], scores[1], scores[2], scores[3]]);
 
     const enter = ps.enter();
 
+    // in %
+    const w = 19;
+    const off = (100 - 5 * w) / 4;
+
+    // in px
     const h = 150;
-    const w = 100;
-    const off = 10;
 
     enter.append("g")
         .attr("class", "pointsSection")
-        .attr("transform", function (d, i) { return `translate(${i * (w + off)} 0)`; })
         .append("rect")
-        .attr("width", w)
+        .attr("x", function (d, i) { return `${i * (w + off)}%`; })
+        .attr("width", `${w}%`)
         .attr("height", h)
         .style("stroke-width", "1px")
         .style("stroke", "black")
@@ -260,35 +262,32 @@ function drawPoints() {
     enter.append("line")
         .style("stroke-width", "1px")
         .style("stroke", "black")
-        .attr("x1", (d, i) => i * (w + off) + w / 2)
+        .attr("x1", (d, i) => `${i * (w + off) + w / 2}%`)
         .attr("y1", 0)
-        .attr("x2", (d, i) => i * (w + off) + w / 2)
+        .attr("x2", (d, i) => `${i * (w + off) + w / 2}%`)
         .attr("y2", h * 2 / 3);
 
     enter.append("line")
         .style("stroke-width", "1px")
         .style("stroke", "black")
-        .attr("x1", (d, i) => i * (w + off))
+        .attr("x1", (d, i) => `${i * (w + off)}%`)
         .attr("y1", h * 2 / 3)
-        .attr("x2", (d, i) => i * (w + off) + w)
+        .attr("x2", (d, i) => `${i * (w + off) + w}%`)
         .attr("y2", h * 2 / 3);
 
     enter.append("line")
         .style("stroke-width", "1px")
         .style("stroke", "black")
-        .attr("x1", (d, i) => i * (w + off))
+        .attr("x1", (d, i) => `${i * (w + off)}%`)
         .attr("y1", h / 3)
-        .attr("x2", (d, i) => i * (w + off) + w)
+        .attr("x2", (d, i) => `${i * (w + off) + w}%`)
         .attr("y2", h / 3);
 
     const scoreUpdate = enter.merge(ps).selectAll(".score")
-        .data(d => d);
+        .data((d, i) => d.map(num => ({"n": num, "pidx": i})));
     const scoreEnter = scoreUpdate.enter().append("text")
         .attr("class", "score")
-        .attr("x", "20")
-        .attr("y", "20");
-    scoreUpdate.merge(scoreEnter)
-        .attr("transform", function (d, i) {
+        .attr("y", function (d, i) {
             let x = 0;
             if (i === 2 || i == 3) {
                 x = -1;
@@ -296,6 +295,9 @@ function drawPoints() {
             if (i === 4) {
                 x = -2;
             }
+            return `${30 + -x * 50}px`;
+        })
+        .attr("x", function (d, i) {
             let y = 0;
             if (i === 1 || i == 3) {
                 y = 1;
@@ -303,22 +305,23 @@ function drawPoints() {
             if (i === 4) {
                 y = 0.5;
             }
+            return `${w / 6 + y * w / 2 + d.pidx * (w + off)}%`;
+        });
 
-            return `translate(${y * (w) / 2} ${w/6 + -x * (w) / 2})`;
-        })
-        .text(d => d);
+    scoreUpdate.merge(scoreEnter)
+        .text(d => d.n);
 
     if (scores[3] !== emptyArray) {
         const total = scores[0][4] + scores[1][4] + scores[2][4] + scores[3][4];
-        d3.select("#points").selectAll("#total-score")
+        d3.select("#points")
+            .selectAll("#total-score")
             .data([0])
             .enter()
             .append("text")
             .attr("id", "total-score")
-            .attr("x", "20")
-            .attr("y", "20")
+            .attr("x", `${w / 4 + 4 * (w + off)}%`)
+            .attr("y", "80")
             .attr("font-size", "36")
-            .attr("transform", `translate(${4 * (w + off)} 60)`)
             .text(total);
     }
 }
@@ -357,8 +360,6 @@ function drawBoard() {
     const cells = rootSvg.select("#board")
         .selectAll(".cell")
         .data(board, d => `${d.x} ${d.y}`);
-
-    rootSvg.style("height", `${maxX * (550 / maxY)}px`);
 
     const cellWidth = 100 / maxY;
     const cellHeight = 100 / maxX;
@@ -438,4 +439,8 @@ function drawBoard() {
             .style("fill-opacity", 1);
     }, 1000);
 
+    setTimeout(() => {
+        const boardWidth = d3.select("#board").node().getBBox().width;
+        rootSvg.style("height", `${maxX * (boardWidth / maxY)}px`);
+    }, 5);
 }

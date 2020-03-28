@@ -6,6 +6,10 @@ body {
     font-weight: 400;
 }
 
+#points {
+    height: 200px;
+}
+
 #goals-section {
     margin-bottom: 10px;
 }
@@ -19,7 +23,7 @@ body {
     display: none;
 }
 
-#game, #goals-section {
+#game, #goals-section, #points {
     width: 100%;
     max-width: 550px;
 }

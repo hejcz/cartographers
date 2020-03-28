@@ -138,6 +138,7 @@ class App {
                     }
                     sendError(ErrorCode.NO_SUCH_ROOM)
                 }
+                "ping" -> {}
                 else -> {
                     val info = wsToInfo[outgoing]
                     if (info == null) {
