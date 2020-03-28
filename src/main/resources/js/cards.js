@@ -206,8 +206,10 @@ var cards = {
 };
 
 function bounds(points) {
-    let minX = maxX = points[0].x;
-    let minY = maxY = points[0].y;
+    let minX = points[0].x;
+    let maxX = points[0].x;
+    let minY = points[0].y;
+    let maxY = points[0].y;
     for (const p of points) {
         if (p.x < minX) {
             minX = p.x;
