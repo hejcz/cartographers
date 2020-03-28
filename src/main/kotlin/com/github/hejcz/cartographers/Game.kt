@@ -50,6 +50,12 @@ class GameImplementation(
     private fun processReconnect(nick: String) {
         player(nick)?.left = false
         val player = player(nick)!!
+
+        if (!started) {
+            recentEvents.add(nick, boardEvent(player))
+            return
+        }
+
         (setOf(
             newCardEvent(),
             goalsEvent(),
