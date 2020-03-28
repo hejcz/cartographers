@@ -12,16 +12,10 @@ inline class Nick(val nick: String)
 /**
  * This class is thread safe.
  */
-class Room(gid: String) {
+class Room(gid: String, gameOptions: GameOptions) {
     private var lock: Lock = ReentrantLock()
 
-    private var game: Game =
-        kotlin.run {
-            val swapBoards = gid.contains("monster")
-            val advancedBoard = gid.contains("adv")
-            GameImplementation(gid, options =
-                GameOptions(swapBoardsOnMonsters = swapBoards, advancedBoard = advancedBoard))
-        }
+    private var game: Game = GameImplementation(gid, options = gameOptions)
 
     private val callbacks: MutableMap<Nick, PlayerChannel> = mutableMapOf()
 

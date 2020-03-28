@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.hejcz.cartographers.ErrorCode
+import com.github.hejcz.cartographers.GameOptions
 import com.github.hejcz.cartographers.Point
 import com.github.hejcz.cartographers.Terrain
 import io.ktor.application.call
@@ -30,6 +31,7 @@ import java.util.concurrent.locks.ReentrantLock
 
 data class Command(val type: String, val data: JsonNode)
 data class JoinGameData(val nick: String, val gid: String)
+data class CreateGameData(val nick: String, val gid: String, val options: Map<String, String>)
 data class DrawData(val points: Array<Point>, val terrain: Terrain)
 
 data class PlayerInfo(val nick: String, val room: Room)
@@ -87,7 +89,7 @@ class App {
                     wsToInfo.remove(outgoing)
                 }
                 "create" -> {
-                    val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
+                    val (nick, gid, opts) = mapper.readValue<CreateGameData>(command.data.toString())
                     if (wsToInfo[outgoing] != null) {
                         sendError(ErrorCode.ALREADY_IN_GAME)
                         return
@@ -104,7 +106,10 @@ class App {
                         sendError(ErrorCode.ROOM_EXISTS)
                         return
                     }
-                    val newRoom = Room(gid)
+                    val newRoom = Room(gid, GameOptions(
+                        swapBoardsOnMonsters = opts["swap"] == "true",
+                        advancedBoard = opts["advanced"] == "true"
+                    ))
                     WsChannel(outgoing, mapper)
                     newRoom.join(Nick(nick), WsChannel(outgoing, mapper))
                     gidToRoom[gid] = newRoom

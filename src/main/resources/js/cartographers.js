@@ -13,7 +13,6 @@ const drawableTerrains = ["FOREST", "WATER", "PLAINS", "CITY", "MONSTER"]
 
 const host = window.location.hostname;
 const port = window.location.port;
-let canPing = false;
 
 const ws = new WebSocket(
     host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
@@ -31,7 +30,10 @@ ws.onopen = function () {
     d3.select("#create").on("click", () => {
         const roomId = d3.select("#roomId").property("value");
         const nick = d3.select("#nick").property("value");
-        ws.send(JSON.stringify({ "type": "create", "data": { "nick": nick, "gid": roomId } }));
+        const swap = d3.select("#swap").property("checked");
+        const advanced = d3.select("#adv").property("checked");
+        ws.send(JSON.stringify({ "type": "create", "data": { "nick": nick, "gid": roomId,
+            "options": {"swap": swap, "advanced": advanced} } }));
     });
     d3.select("#join").on("click", () => {
         const roomId = d3.select("#roomId").property("value");
@@ -98,6 +100,7 @@ ws.onmessage = function (event) {
             d3.select("#goals-section")
                 .html(`${score_card_to_text(spring, "WIOSNA")}${score_card_to_text(summer, "LATO")}
                 ${score_card_to_text(autumn, "JESIEŃ")}${score_card_to_text(winter, "ZIMA")}`);
+            d3.select("#start").style("display", "none");
         }
         if (event["type"] === "CREATE_SUCCESS" || event["type"] === "JOIN_SUCCESS") {
             const { data } = event;
@@ -105,6 +108,7 @@ ws.onmessage = function (event) {
             d3.select("#start").style("display", null);
             d3.select("#goals").style("display", null);
             d3.select("#submit").style("display", null);
+            d3.select("#game-creation").style("display", "none");
         }
         if (event["type"] === "ERROR") {
             const { error } = event;
@@ -123,6 +127,8 @@ ws.onmessage = function (event) {
                         board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
                     }
                 }
+                drawCoins();
+                drawPoints();
             }
             resetBoard();
             event.board.forEach(cell => {
@@ -157,9 +163,6 @@ rootSvg.append("svg")
 
 d3.select("#start")
     .on("click", function () { ws.send(JSON.stringify({ "type": "start" })) });
-
-d3.select("#leave")
-    .on("click", function () { ws.send(JSON.stringify({ "type": "leave" })) });
 
 d3.select("#goals")
     .on("click", function () {
@@ -212,11 +215,6 @@ d3.select("#submit")
 d3.select("#points")
     .attr("width", 600)
     .attr("height", 200);
-
-drawBoard();
-drawCoins();
-drawPoints();
-
 
 function drawPoints() {
 

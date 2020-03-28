@@ -14,13 +14,20 @@
 <body>
 <div><h1>Cartographers: A Roll Player Tale</h1></div>
 
-<label for="nick">Nick:</label><br><br>
-<input type="text" id="nick" name="nick"><br><br>
-<label for="roomId">Room id:</label><br><br>
-<input type="text" id="roomId" name="roomId"><br><br>
-<button id="create">Create</button>
-<button id="join">Join</button>
-<button id="leave">Leave</button>
+<div id="game-creation">
+    <label for="nick">Nick:</label><br><br>
+    <input type="text" id="nick" name="nick"><br><br>
+    <label for="roomId">Room id:</label><br><br>
+    <input type="text" id="roomId" name="roomId"><br><br>
+
+    <input type="checkbox" id="swap" name="swap" checked>
+    <label for="swap">Zamiana plansz przy potworach</label><br>
+    <input type="checkbox" id="adv" name="adv">
+    <label for="adv">Plansza dla zaawansowanych</label><br><br>
+
+    <button id="create">Create</button>
+    <button id="join">Join</button>
+</div>
 
 <div>
     <button id="start" style="display: none">Start</button>
