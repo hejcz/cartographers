@@ -173,7 +173,6 @@ ws.onmessage = function (event) {
 };
 
 const rootSvg = d3.select("#game");
-rootSvg.style("height", rootSvg.style("width"));
 
 rootSvg.append("svg")
     .attr("id", "board");
@@ -359,18 +358,21 @@ function drawBoard() {
         .selectAll(".cell")
         .data(board, d => `${d.x} ${d.y}`);
 
-    const cellSize = 100 / Math.max(maxX, maxY);
+    rootSvg.style("height", `${maxX * (550 / maxY)}px`);
+
+    const cellWidth = 100 / maxY;
+    const cellHeight = 100 / maxX;
 
     const cellEnter = cells.enter()
         .append("svg")
-        .attr("x", d => `${d.y * cellSize}%`)
-        .attr("y", d => `${-d.x * cellSize}%`);
+        .attr("x", d => `${d.y * cellWidth}%`)
+        .attr("y", d => `${-d.x * cellHeight}%`);
 
     const enter = cellEnter
         .append("rect")
         .attr("class", "cell")
-        .attr("width", `${cellSize}%`)
-        .attr("height", `${cellSize}%`)
+        .attr("width", `${cellWidth}%`)
+        .attr("height", `${cellHeight}%`)
         .style("stroke-width", "1px")
         .style("stroke", "grey")
         .on("click", function (d) {
@@ -390,10 +392,10 @@ function drawBoard() {
     const ruinsImage = cellEnter.filter(d => d.hasRuins)
         .append("image")
         .attr("href", "/game/ruins.svg")
-        .attr("width", `${cellSize*0.6}%`)
-        .attr("height", `${cellSize*0.6}%`)
-        .attr("x", `${cellSize*0.2}%`)
-        .attr("y", `${cellSize*0.2}%`)
+        .attr("width", `${cellWidth*0.6}%`)
+        .attr("height", `${cellHeight*0.6}%`)
+        .attr("x", `${cellWidth*0.2}%`)
+        .attr("y", `${cellHeight*0.2}%`)
         .on("click", function (d) {
             if (d.locked) {
                 return;
@@ -411,10 +413,10 @@ function drawBoard() {
     const mountainImage = cellEnter.filter(d => d.type === "MOUNTAIN")
         .append("image")
         .attr("href", "/game/mountain.svg")
-        .attr("width", `${cellSize*0.6}%`)
-        .attr("height", `${cellSize*0.6}%`)
-        .attr("x", `${cellSize*0.2}%`)
-        .attr("y", `${cellSize*0.2}%`);
+        .attr("width", `${cellWidth*0.6}%`)
+        .attr("height", `${cellHeight*0.6}%`)
+        .attr("x", `${cellWidth*0.2}%`)
+        .attr("y", `${cellHeight*0.2}%`);
 
     const cellsToAnimate = cells.merge(enter)
         .style("fill", function (d) { return `rgb(${colorByType[d.type]})` })
