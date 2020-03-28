@@ -23,7 +23,7 @@ interface Board {
 
     companion object {
         fun create(): Board =
-            BasicBoard(
+            Board11x11(
                 mapOf(
                     Point(-1, 3) to Terrain.MOUNTAIN,
                     Point(-2, 8) to Terrain.MOUNTAIN,
@@ -35,14 +35,14 @@ interface Board {
             )
 
         fun create(img: String): Board {
-            return BasicBoard(
+            return Board11x11(
                 parseToBoard(img),
                 basicBoardRuins
             )
         }
 
         fun createAdvanced(): Board =
-            BasicBoard(
+            Board11x11(
                 mapOf(
                     Point(-1, 8) to Terrain.MOUNTAIN,
                     Point(-2, 3) to Terrain.MOUNTAIN,
@@ -61,7 +61,7 @@ interface Board {
             )
 
         fun createAdvanced(img: String): Board {
-            return BasicBoard(
+            return Board11x11(
                 parseToBoard(img),
                 advancedBoardRuins
             )

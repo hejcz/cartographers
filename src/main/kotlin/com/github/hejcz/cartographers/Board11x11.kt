@@ -3,14 +3,14 @@ package com.github.hejcz.cartographers
 import java.util.stream.IntStream
 import kotlin.math.max
 
-class BasicBoard(private val board: Map<Point, Terrain>, private val ruins: Set<Point>) :
+class Board11x11(private val board: Map<Point, Terrain>, private val ruins: Set<Point>) :
     Board {
     override fun draw(shape: Shape, terrain: Terrain): Board {
         val newBoard = board.toMutableMap()
         for (p in shape.toPoints()) {
             newBoard[p] = terrain
         }
-        return BasicBoard(
+        return Board11x11(
             newBoard.toMap().withDefault { Terrain.EMPTY }, ruins)
     }
 
