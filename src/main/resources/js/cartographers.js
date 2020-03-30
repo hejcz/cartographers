@@ -12,165 +12,185 @@ let maxX = 0, maxY = 0;
 
 const drawableTerrains = ["FOREST", "WATER", "PLAINS", "CITY", "MONSTER"]
 
-const host = window.location.hostname;
-const port = window.location.port;
+let reconnectToken = undefined;
+var ws;
+reconnect();
 
-const ws = new WebSocket(
-    host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
+function reconnect() {
+    const host = window.location.hostname;
 
-let wsPingInterval;
-let httpPingInterval;
+    ws = new WebSocket(
+        host === "cartographers.herokuapp.com" ? "wss://cartographers.herokuapp.com/api" : "ws://localhost:8080/api");
 
-ws.onopen = function () {
-    wsPingInterval = setInterval(() => {
-        // ping heroku to avoid H15 idle connection error. For some reason ping from server 
-	    // to client does not work with heroku.
-        ws.send(JSON.stringify({ "type": "ping"}));
-    }, 3000);
-    httpPingInterval = setInterval(() => {
-        // ping heroku to avoid dyno shut down
-        d3.request("/").get();
-    }, 1000 * 60 * 5);
-    d3.select("#create").on("click", () => {
-        const roomId = d3.select("#roomId").property("value");
-        const nick = d3.select("#nick").property("value");
-        const swap = d3.select("#swap").property("checked");
-        const advanced = d3.select("#adv").property("checked");
-        const rect = d3.select("#rect").property("checked");
-        ws.send(JSON.stringify({ "type": "create", "data": { "nick": nick, "gid": roomId,
-            "options": {"swap": swap, "advanced": advanced, "rectangular": rect} } }));
-    });
-    d3.select("#join").on("click", () => {
-        const roomId = d3.select("#roomId").property("value");
-        const nick = d3.select("#nick").property("value");
-        ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": roomId } }));
-    });
-};
+    let wsPingInterval;
+    let httpPingInterval;
 
-ws.onclose = function () {
-    clearInterval(wsPingInterval);
-    clearInterval(httpPingInterval);
-    d3.select("#errors")
-        .append("div")
-        .text("Disconnected - reload site and join with same nick and room id");
-}
-
-ws.onmessage = function (event) {
-    console.log(event);
-    const events = JSON.parse(event.data);
-    console.log(events);
-    for (const event of events) {
-        if (event["type"] === "ACCEPTED_SHAPE") {
-            const { points: pts, terrain, totalCoins } = event;
-            pts.filter(it => {
-                const match = board.find(cell => cell.x === it.x && cell.y === it.y);
-                if (match) {
-                    match.terrain = terrain;
-                    match.locked = true;
-                }
+    if (reconnectToken === undefined) {
+        ws.onopen = function () {
+            wsPingInterval = setInterval(() => {
+                // ping heroku to avoid H15 idle connection error. For some reason ping from server
+                // to client does not work with heroku.
+                ws.send(JSON.stringify({ "type": "ping"}));
+            }, 3000);
+            httpPingInterval = setInterval(() => {
+                // ping heroku to avoid dyno shut down
+                d3.request("/").get();
+            }, 1000 * 60 * 5);
+            d3.select("#create").on("click", () => {
+                const roomId = d3.select("#roomId").property("value");
+                const nick = d3.select("#nick").property("value");
+                const swap = d3.select("#swap").property("checked");
+                const advanced = d3.select("#adv").property("checked");
+                const rect = d3.select("#rect").property("checked");
+                ws.send(JSON.stringify({ "type": "create", "data": { "nick": nick, "gid": roomId,
+                    "options": {"swap": swap, "advanced": advanced, "rectangular": rect} } }));
             });
-            points.clear();
-            drawBoard();
-            coinsCount = totalCoins;
-            drawCoins();
-        }
-        if (event["type"] === "NEW_CARD") {
-            const { card, ruins, currentTurnPoints, maxTurnPoints } = event;
-            updateCard(cards[card], ruins);
-            updateTerrains(cards[card].terrains);
-            currentTerrain = cards[card].terrains[0];
-            d3.select("#points-in-turn")
-                .text(currentTurnPoints >= maxTurnPoints
-                    ? "OSTATNIA RUNDA W TEJ PORZE ROKU"
-                    : `PUNKTY PO TEJ TURZE: ${currentTurnPoints} / ${maxTurnPoints}`)
-        }
-        if (event["type"] === "SCORE") {
-            const { quest1, quest2, coins, monsters, season } = event.score;
-            let idx = undefined;
-            if (season === "SPRING") {
-                idx = 0;
-            }
-            if (season === "SUMMER") {
-                idx = 1;
-            }
-            if (season === "AUTUMN") {
-                idx = 2;
-            }
-            if (season === "WINTER") {
-                idx = 3;
-            }
-            scores[idx] = [quest1, quest2, coins, -monsters, quest1 + quest2 + coins - monsters];
-            drawPoints();
-        }
-        if (event["type"] === "GOALS") {
-            const { spring, autumn, winter, summer } = event;
-            const score_card_to_text = (prop, season) => {
-                const sc = score_cards[prop];
-                const title = sc.title;
-                const desc = sc.description;
-                return `<div><h4>[${season}] ${title}</h4><p>${desc}</p></div>`
-            };
-            d3.select("#goals-section")
-                .html(`${score_card_to_text(spring, "WIOSNA")}${score_card_to_text(summer, "LATO")}
-                ${score_card_to_text(autumn, "JESIEŃ")}${score_card_to_text(winter, "ZIMA")}`);
-            d3.select("#start").style("display", "none");
-        }
-        if (event["type"] === "CREATE_SUCCESS" || event["type"] === "JOIN_SUCCESS") {
-            const { nick : nickname, roomId } = event.data;
-            nick = nickname;
-            d3.select("#start").style("display", null);
-            d3.select("#goals").style("display", null);
-            d3.select("#submit").style("display", null);
-            d3.select("#undo").style("display", null);
-            d3.select("#game-creation").style("display", "none");
-            d3.select("#game-info").html(`Nick: ${nick}<br>Room id: ${roomId}<br>`);
-        }
-        if (event["type"] === "ERROR") {
-            const { error } = event;
-            d3.select("#errors")
-                .append("div")
-                .text(error)
-                .transition()
-                .duration(3000)
-                .remove();
-        }
-        if (event["type"] === "BOARD") {
-            maxX = event.height;
-            maxY = event.width;
-            if (board === emptyArray) {
-                board = [];
-                for (let x = 0; x < maxX; x++) {
-                    for (let y = 0; y < maxY; y++) {
-                        board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
-                    }
-                }
-                drawCoins();
-                drawPoints();
-            }
-            resetBoard();
-            event.board.forEach(cell => {
-                const {x, y, terrain} = cell;
-                const match = board.find(c => c.x === x && c.y === y);
-                if (match) {
-                    match.type = terrain;
-                    match.locked = true;
-                }
+            d3.select("#join").on("click", () => {
+                const roomId = d3.select("#roomId").property("value");
+                const nick = d3.select("#nick").property("value");
+                ws.send(JSON.stringify({ "type": "join", "data": { "nick": nick, "gid": roomId } }));
             });
-            event.ruins.forEach(point => {
-                const {x, y} = point;
-                const match = board.find(c => c.x === x && c.y === y);
-                if (match) {
-                    match.hasRuins = true;
-                }
-            });
-            drawBoard();
-        }
-        if (event["type"] === "COINS") {
-            coinsCount = event.coins;
-            drawCoins();
+        };
+    } else {
+        ws.onopen = function () {
+            d3.select("#errors").selectAll("div").remove();
+            ws.send(JSON.stringify({ "type": "join", "data": { "reconnectToken": reconnectToken } }));
         }
     }
-};
+
+    function displayError(err) {
+        const errorUpdate = d3.select("#errors").selectAll("div").data([err]);
+        const errorEnter = errorUpdate.enter().append("div");
+        return errorUpdate.merge(errorEnter).text(d => d);
+    }
+
+    ws.onclose = function () {
+        clearInterval(wsPingInterval);
+        clearInterval(httpPingInterval);
+        displayError("Disconnected - reload site and join with same nick and room id");
+        reconnect();
+    }
+
+    ws.onmessage = function (event) {
+        console.log(event);
+        const events = JSON.parse(event.data);
+        console.log(events);
+        for (const event of events) {
+            if (event["type"] === "ACCEPTED_SHAPE") {
+                const { points: pts, terrain, totalCoins } = event;
+                pts.filter(it => {
+                    const match = board.find(cell => cell.x === it.x && cell.y === it.y);
+                    if (match) {
+                        match.terrain = terrain;
+                        match.locked = true;
+                    }
+                });
+                points.clear();
+                drawBoard();
+                coinsCount = totalCoins;
+                drawCoins();
+            }
+            if (event["type"] === "NEW_CARD") {
+                const { card, ruins, currentTurnPoints, maxTurnPoints } = event;
+                updateCard(cards[card], ruins);
+                updateTerrains(cards[card].terrains);
+                currentTerrain = cards[card].terrains[0];
+                d3.select("#points-in-turn")
+                    .text(currentTurnPoints >= maxTurnPoints
+                        ? "OSTATNIA RUNDA W TEJ PORZE ROKU"
+                        : `PUNKTY PO TEJ TURZE: ${currentTurnPoints} / ${maxTurnPoints}`)
+            }
+            if (event["type"] === "SCORE") {
+                const { quest1, quest2, coins, monsters, season } = event.score;
+                let idx = undefined;
+                if (season === "SPRING") {
+                    idx = 0;
+                }
+                if (season === "SUMMER") {
+                    idx = 1;
+                }
+                if (season === "AUTUMN") {
+                    idx = 2;
+                }
+                if (season === "WINTER") {
+                    idx = 3;
+                }
+                scores[idx] = [quest1, quest2, coins, -monsters, quest1 + quest2 + coins - monsters];
+                drawPoints();
+            }
+            if (event["type"] === "GOALS") {
+                const { spring, autumn, winter, summer } = event;
+                const score_card_to_text = (prop, season) => {
+                    const sc = score_cards[prop];
+                    const title = sc.title;
+                    const desc = sc.description;
+                    return `<div><h4>[${season}] ${title}</h4><p>${desc}</p></div>`
+                };
+                d3.select("#goals-section")
+                    .html(`${score_card_to_text(spring, "WIOSNA")}${score_card_to_text(summer, "LATO")}
+                    ${score_card_to_text(autumn, "JESIEŃ")}${score_card_to_text(winter, "ZIMA")}`);
+                d3.select("#start").style("display", "none");
+            }
+            if (event["type"] === "CREATE_SUCCESS" || event["type"] === "JOIN_SUCCESS") {
+                displayError("You (re)connected to server")
+                    .transition()
+                    .duration(3000)
+                    .remove();
+                const { nick : nickname, roomId, reconnectToken : token } = event.data;
+                nick = nickname;
+                reconnectToken = token;
+                d3.select("#start").style("display", null);
+                d3.select("#goals").style("display", null);
+                d3.select("#submit").style("display", null);
+                d3.select("#undo").style("display", null);
+                d3.select("#game-creation").style("display", "none");
+                d3.select("#game-info").html(`Nick: ${nick}<br>Room id: ${roomId}<br>`);
+            }
+            if (event["type"] === "ERROR") {
+                const { error } = event;
+                displayError(error)
+                    .transition()
+                    .duration(3000)
+                    .remove();
+            }
+            if (event["type"] === "BOARD") {
+                maxX = event.height;
+                maxY = event.width;
+                if (board === emptyArray) {
+                    board = [];
+                    for (let x = 0; x < maxX; x++) {
+                        for (let y = 0; y < maxY; y++) {
+                            board.push({ "x": -x, "y": y, "type": "EMPTY", "locked": false })
+                        }
+                    }
+                    drawCoins();
+                    drawPoints();
+                }
+                resetBoard();
+                event.board.forEach(cell => {
+                    const {x, y, terrain} = cell;
+                    const match = board.find(c => c.x === x && c.y === y);
+                    if (match) {
+                        match.type = terrain;
+                        match.locked = true;
+                    }
+                });
+                event.ruins.forEach(point => {
+                    const {x, y} = point;
+                    const match = board.find(c => c.x === x && c.y === y);
+                    if (match) {
+                        match.hasRuins = true;
+                    }
+                });
+                drawBoard();
+            }
+            if (event["type"] === "COINS") {
+                coinsCount = event.coins;
+                drawCoins();
+            }
+        }
+    };
+}
 
 const rootSvg = d3.select("#game");
 

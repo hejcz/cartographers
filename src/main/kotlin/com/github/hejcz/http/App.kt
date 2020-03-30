@@ -1,8 +1,8 @@
 package com.github.hejcz.http
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.NullNode
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.hejcz.cartographers.ErrorCode
@@ -25,15 +25,16 @@ import io.ktor.websocket.DefaultWebSocketServerSession
 import io.ktor.websocket.WebSockets
 import io.ktor.websocket.webSocket
 import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.sendBlocking
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 
 data class Command(val type: String, val data: JsonNode)
-data class JoinGameData(val nick: String, val gid: String)
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class JoinGameData(val nick: String?, val gid: String?, val reconnectToken: String?)
 data class CreateGameData(val nick: String, val gid: String, val options: Map<String, String>)
 data class DrawData(val points: Array<Point>, val terrain: Terrain)
-data class JoinedData(val nick: String, val roomId: String)
+data class JoinedData(val nick: String, val roomId: String, val reconnectToken: String)
 
 data class PlayerInfo(val nick: String, val room: Room)
 
@@ -42,6 +43,7 @@ class App {
         private val mapper = ObjectMapper().registerModule(KotlinModule())
         private val newGameLock = ReentrantLock()
         private val wsToInfo = ConcurrentHashMap<SendChannel<Frame>, PlayerInfo>()
+        private val reconnectTokenToInfo = ConcurrentHashMap<String, PlayerInfo>()
         private val gidToRoom = ConcurrentHashMap<String, Room>()
 
         @JvmStatic
@@ -110,16 +112,31 @@ class App {
                     newRoom.join(Nick(nick), WsChannel(outgoing, mapper))
                     gidToRoom[gid] = newRoom
                     newGameLock.unlock()
-                    wsToInfo[outgoing] = PlayerInfo(nick, newRoom)
-                    sendEvent("CREATE_SUCCESS", mapper.writeValueAsString(JoinedData(nick, gid)))
+                    val token = UUID.randomUUID().toString()
+                    val info = PlayerInfo(nick, newRoom)
+                    reconnectTokenToInfo[token] = info
+                    wsToInfo[outgoing] = info
+                    sendEvent("CREATE_SUCCESS", mapper.writeValueAsString(JoinedData(nick, gid, token)))
                 }
                 "join" -> {
-                    val (nick, gid) = mapper.readValue<JoinGameData>(command.data.toString())
-                    if (nick.isBlank()) {
+                    val (nick, gid, reconnectToken) = mapper.readValue<JoinGameData>(command.data.toString())
+                    if (reconnectToken != null) {
+                        val info = reconnectTokenToInfo[reconnectToken]
+                        if (info != null) {
+                            if (info.room.join(Nick(info.nick), WsChannel(outgoing, mapper), true)) {
+                                wsToInfo[outgoing] = PlayerInfo(info.nick, info.room)
+                                sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(JoinedData(info.nick, info.room.gid, reconnectToken)))
+                            }
+                        } else {
+                            sendError(ErrorCode.CANT_JOIN)
+                        }
+                        return
+                    }
+                    if (nick.isNullOrBlank()) {
                         sendError(ErrorCode.NICK_CANT_BE_EMPTY)
                         return
                     }
-                    if (gid.isBlank()) {
+                    if (gid.isNullOrBlank()) {
                         sendError(ErrorCode.ROOM_ID_CANT_BE_EMPTY)
                         return
                     }
@@ -131,8 +148,11 @@ class App {
                     if (room != null) {
                         // TODO
                         if (room.join(Nick(nick), WsChannel(outgoing, mapper))) {
-                            wsToInfo[outgoing] = PlayerInfo(nick, room)
-                            sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(JoinedData(nick, gid)))
+                            val token = UUID.randomUUID().toString()
+                            val info = PlayerInfo(nick, room)
+                            reconnectTokenToInfo[token] = info
+                            wsToInfo[outgoing] = info
+                            sendEvent("JOIN_SUCCESS", mapper.writeValueAsString(JoinedData(nick, gid, token)))
                         }
                         return
                     }

@@ -12,7 +12,7 @@ inline class Nick(val nick: String)
 /**
  * This class is thread safe.
  */
-class Room(gid: String, gameOptions: GameOptions) {
+class Room(val gid: String, gameOptions: GameOptions) {
     private var lock: Lock = ReentrantLock()
 
     private var game: Game = GameImplementation(gid, options = gameOptions)
@@ -40,17 +40,17 @@ class Room(gid: String, gameOptions: GameOptions) {
         kicker.cancel()
     }
 
-    fun join(nick: Nick, channel: PlayerChannel): Boolean = synchronized(lock) {
+    fun join(nick: Nick, channel: PlayerChannel, force: Boolean = false): Boolean = synchronized(lock) {
             when {
-                nick in callbacks -> {
-                    channel.send(setOf(ErrorEvent(ErrorCode.NICK_TAKEN)))
-                    false
-                }
-                game.canJoin(nick.nick) -> {
-                    game = game.join(nick.nick)
+                force || game.canJoin(nick.nick) ->  {
+                    game = game.join(nick.nick, force = force)
                     callbacks[nick] = channel
                     sendEvents()
                     true
+                }
+                nick in callbacks -> {
+                    channel.send(setOf(ErrorEvent(ErrorCode.NICK_TAKEN)))
+                    false
                 }
                 else -> {
                     channel.send(setOf(ErrorEvent(ErrorCode.CANT_JOIN)))

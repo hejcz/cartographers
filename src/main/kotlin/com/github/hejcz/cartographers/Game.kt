@@ -26,9 +26,11 @@ class GameImplementation(
 
     override fun canJoin(nick: String): Boolean = !started || player(nick)?.left ?: false
 
-    override fun join(nick: String): Game {
+    override fun join(nick: String, force: Boolean): Game {
         recentEvents.clear()
-        if (player(nick)?.left == true) {
+        if (force) {
+            processReconnect(nick)
+        } else if (player(nick)?.left == true) {
             processReconnect(nick)
         } else {
             processFirstConnection(nick)
@@ -346,7 +348,7 @@ class GameImplementation(
 }
 
 interface Game {
-    fun join(nick: String): Game
+    fun join(nick: String, force: Boolean = false): Game
     fun start(nick: String): Game
     fun draw(nick: String, points: Set<Point>, terrain: Terrain): Game
     fun boardOf(nick: String): Board
