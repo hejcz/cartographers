@@ -117,9 +117,9 @@ class GameImplementation(
             else -> player
         }
 
-        val board = boardOwner.board
+        val originalBoard = boardOwner.board
 
-        val error = validate(shape, board, currentCard, terrain)
+        val error = validate(shape, originalBoard, currentCard, terrain)
         if (error != null) {
             recentEvents.add(nick, ErrorEvent(error))
             return
@@ -127,13 +127,14 @@ class GameImplementation(
 
         boardOwner.lastCoins = boardOwner.coins
 
-        boardOwner.board = board.draw(shape, terrain)
+        val newBoard = originalBoard.draw(shape, terrain)
+        boardOwner.board = newBoard
 
         if (currentCard.givesCoin(shape)) {
             boardOwner.coins++
         }
 
-        boardOwner.coins += countMountainsClosedWith(shape, board)
+        boardOwner.coins += countMountainsClosedWith(shape, newBoard)
         boardOwner.lastShape = shape
         playersDone.add(nick)
 
