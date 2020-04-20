@@ -58,11 +58,16 @@ class GameImplementation(
             return
         }
 
+        val boardOwner = when {
+            monsterDrawn -> playerMatching(player)
+            else -> player
+        }
+
         (setOf(
             newCardEvent(),
             goalsEvent(),
-            boardEvent(player),
-            CoinsEvent(player.coins)
+            boardEvent(boardOwner),
+            CoinsEvent(boardOwner.coins)
         ) + player.summaries
             .mapIndexed { index, it -> ScoresEvent(toScore(it, Season.byIndex(index))) })
             .forEach { recentEvents.add(player.nick, it) }
@@ -120,6 +125,8 @@ class GameImplementation(
             return
         }
 
+        boardOwner.lastCoins = boardOwner.coins
+
         boardOwner.board = board.draw(shape, terrain)
 
         if (currentCard.givesCoin(shape)) {
@@ -127,10 +134,10 @@ class GameImplementation(
         }
 
         boardOwner.coins += countMountainsClosedWith(shape, board)
-        player.lastShape = shape
+        boardOwner.lastShape = shape
         playersDone.add(nick)
 
-        recentEvents.add(nick, AcceptedShape(terrain, shape.toPoints(), player.coins))
+        recentEvents.add(nick, AcceptedShape(terrain, shape.toPoints(), boardOwner.coins))
 
         if (players.size != playersDone.size) {
             return
@@ -211,7 +218,10 @@ class GameImplementation(
     private fun cleanBeforeNextCard() {
         if (deck[currentCardIndex] is MonsterCard) {
             deck = deck - deck[currentCardIndex]
-            players.forEach { recentEvents.add(it.nick, boardEvent(it)) }
+            players.forEach {
+                recentEvents.add(it.nick, boardEvent(it))
+                recentEvents.add(it.nick, CoinsEvent(it.coins))
+            }
         } else {
             currentCardIndex += 1
         }
@@ -264,6 +274,7 @@ class GameImplementation(
             shiftedNicks.zip(players)
                 .forEach { (drawingPlayerNick, boardOwner) ->
                     recentEvents.add(drawingPlayerNick, boardEvent(boardOwner))
+                    recentEvents.add(drawingPlayerNick, CoinsEvent(boardOwner.coins))
                 }
         }
     }
@@ -300,10 +311,18 @@ class GameImplementation(
             return this
         }
         playersDone.remove(nick)
-        player(nick)?.let {
-            it.board = it.board.erase(it.lastShape)
-            recentEvents.add(it.nick, boardEvent(it))
+
+        val player = player(nick) ?: throw RuntimeException("No player with id $nick")
+        val boardOwner = when {
+            monsterDrawn -> playerMatching(player)
+            else -> player
         }
+        boardOwner.coins = boardOwner.lastCoins
+        boardOwner.board = boardOwner.board.erase(boardOwner.lastShape)
+
+        recentEvents.add(player.nick, boardEvent(boardOwner))
+        recentEvents.add(player.nick, CoinsEvent(boardOwner.coins))
+
         return this
     }
 
