@@ -94,3 +94,83 @@ object CoboldsCharge03 : MonsterCard {
 
     override fun toString(): String = javaClass.simpleName
 }
+
+object FlayerIncursionPromoA01 : MonsterCard {
+    private val availableShapes =
+        Shape.create(
+            """
+            [ ]
+            [ ][ ]
+            """
+        ).createAllVariations()
+
+    override fun direction(): Direction =
+        Direction.COUNTERCLOCKWISE
+
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
+
+    override fun number(): String = "PromoA01"
+
+    override fun toString(): String = javaClass.simpleName
+}
+
+object InsectoidInvasionPromoA02 : MonsterCard {
+    private val availableShapes =
+        Shape.create(
+            """
+               [ ]
+            [ ][ ]
+            [ ]
+            """
+        ).createAllVariations()
+
+    override fun direction(): Direction =
+        Direction.CLOCKWISE
+
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
+
+    override fun number(): String = "PromoA02"
+
+    override fun toString(): String = javaClass.simpleName
+}
+
+object RatmanStrikePromoA03 : MonsterCard {
+    private val availableShapes =
+        Shape.create(
+            """
+            [ ][ ][ ]
+            """
+        ).createAllVariations()
+
+    override fun direction(): Direction =
+        Direction.CLOCKWISE
+
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
+
+    override fun number(): String = "PromoA03"
+
+    override fun toString(): String = javaClass.simpleName
+}
+
+object OgreChargePromoA04 : MonsterCard {
+    private val availableShapes =
+        Shape.create(
+            """
+            [ ][ ]
+            [ ][ ]
+            """
+        ).createAllVariations()
+
+    override fun direction(): Direction =
+        Direction.COUNTERCLOCKWISE
+
+    override fun availableShapes(): Set<Shape> =
+        availableShapes
+
+    override fun number(): String = "PromoA04"
+
+    override fun toString(): String = javaClass.simpleName
+}
